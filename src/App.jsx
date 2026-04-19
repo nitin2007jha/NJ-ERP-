@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter }        from 'react-router-dom';
+import { HashRouter }        from 'react-router-dom';
 import { useAppStore }          from '@/store';
 import { AppRoutes }            from '@/router/AppRoutes';
 import { useRealtimeSync }      from '@/hooks/useRealtimeSync';
@@ -50,7 +50,7 @@ export default function App() {
   }
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       {user ? (
         <>
           <SyncLayer />
@@ -59,6 +59,6 @@ export default function App() {
       ) : (
         <AuthScreen />
       )}
-    </BrowserRouter>
+    </HashRouter>
   );
 }
