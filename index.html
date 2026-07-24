@@ -1,18 +1,589 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#059669" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>My Business ERP</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>My Business ERP — Admin Panel</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{ --op:#0f7a80; --op-dark:#0a5a60; --op-light:#e6f6f6; --navy:#0b1c26; --navy2:#122a36; }
+  *{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;}
+  body{background:#f1f5f4;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:#cbd5d1;border-radius:8px;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;border:1px solid transparent;transition:.15s;}
+  .btn-primary{background:var(--op);color:#fff;} .btn-primary:hover{background:var(--op-dark);}
+  .btn-ghost{background:#fff;color:#334155;border-color:#e2e8f0;} .btn-ghost:hover{background:#f8fafc;}
+  .btn-danger{background:#fef2f2;color:#dc2626;border-color:#fecaca;} .btn-danger:hover{background:#fee2e2;}
+  .btn-warn{background:#fffbeb;color:#b45309;border-color:#fde68a;} .btn-warn:hover{background:#fef3c7;}
+  .card{background:#fff;border:1px solid #e5e9e8;border-radius:16px;}
+  .navitem{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;color:#b7c7cc;font-size:13.5px;font-weight:600;cursor:pointer;}
+  .navitem:hover{background:rgba(255,255,255,.06);color:#fff;}
+  .navitem.active{background:var(--op);color:#fff;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;padding:9px 12px;color:#64748b;font-weight:700;text-transform:uppercase;font-size:10.5px;letter-spacing:.03em;border-bottom:1px solid #e5e9e8;background:#fafcfb;}
+  td{padding:9px 12px;border-bottom:1px solid #f1f5f4;color:#334155;}
+  tr:hover td{background:#f8fafc;}
+  .modal-bg{position:fixed;inset:0;background:rgba(9,20,25,.55);z-index:200;display:none;align-items:center;justify-content:center;padding:16px;}
+  .modal-bg.open{display:flex;}
+  .modal{background:#fff;border-radius:16px;width:100%;max-width:720px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;}
+  .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;}
+  .toast-item{animation:slideIn .2s ease;}
+  @keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+  .tabbtn{padding:8px 14px;border-radius:9px;font-size:12.5px;font-weight:700;color:#64748b;cursor:pointer;}
+  .tabbtn.active{background:var(--op-light);color:var(--op-dark);}
+</style>
+</head>
+<body>
+
+<div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+
+<!-- ═══════════════════ LOGIN SCREEN ═══════════════════ -->
+<div id="login-screen" class="min-h-screen flex items-center justify-center px-4" style="background:radial-gradient(circle at top,var(--navy2),var(--navy));">
+  <div class="w-full max-w-sm">
+    <div class="text-center mb-6">
+      <div class="w-14 h-14 bg-white/10 border border-white/15 rounded-2xl flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="shield-check" class="w-7 h-7 text-emerald-400"></i>
+      </div>
+      <h1 class="text-2xl font-black text-white">Admin Panel</h1>
+      <p class="text-slate-400 text-sm mt-1">My Business ERP — restricted access</p>
+    </div>
+    <div class="card p-6" style="background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);">
+      <form id="login-form" class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-300 mb-1 block">Admin Email</label>
+          <input id="admin-email" type="email" required autocomplete="username" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder:text-slate-500 text-sm outline-none focus:border-emerald-500" placeholder="you@example.com">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-300 mb-1 block">Password</label>
+          <input id="admin-password" type="password" required autocomplete="current-password" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder:text-slate-500 text-sm outline-none focus:border-emerald-500">
+        </div>
+        <p id="login-error" class="text-red-400 text-xs hidden"></p>
+        <button type="submit" id="login-btn" class="btn btn-primary w-full justify-center py-2.5 text-sm">Sign In <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
+      </form>
+      <p class="text-slate-500 text-[11px] mt-4 leading-relaxed">Only pre-approved admin accounts can enter. This uses the same Firebase project as the main app — access is enforced both here and in Firestore Security Rules.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ ADMIN APP ═══════════════════ -->
+<div id="admin-app" class="hidden min-h-screen flex">
+
+  <!-- Sidebar -->
+  <div class="w-64 flex-shrink-0 flex flex-col" style="background:linear-gradient(180deg,var(--navy2),var(--navy));">
+    <div class="p-4 border-b border-white/10 flex items-center gap-2.5">
+      <div class="w-9 h-9 bg-emerald-500/20 border border-emerald-500/30 rounded-xl flex items-center justify-center"><i data-lucide="shield-check" class="w-5 h-5 text-emerald-400"></i></div>
+      <div><div class="text-white font-black text-sm leading-tight">Admin Panel</div><div class="text-slate-500 text-[10.5px]">My Business ERP</div></div>
+    </div>
+
+    <div class="p-3 space-y-1">
+      <div class="navitem active" data-nav="dashboard" onclick="Admin.showDashboard()"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</div>
+      <div class="navitem" data-nav="explorer" onclick="Admin.showCustomExplorer()"><i data-lucide="database" class="w-4 h-4"></i> Custom Path Explorer</div>
+    </div>
+
+    <div class="px-4 pt-3 pb-1.5 flex items-center justify-between">
+      <div class="text-[10.5px] font-black text-slate-500 uppercase tracking-wider">Businesses</div>
+      <button onclick="Admin.loadBusinesses()" class="text-slate-500 hover:text-white" title="Refresh"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+    </div>
+    <div class="px-3 pb-2">
+      <input id="biz-search" oninput="Admin.renderBusinessList()" placeholder="Search business..." class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-xs placeholder:text-slate-500 outline-none focus:border-emerald-500">
+    </div>
+    <div id="biz-list" class="flex-1 overflow-y-auto px-2 pb-3 space-y-1"></div>
+
+    <div class="p-3 border-t border-white/10">
+      <div class="text-slate-400 text-[11px] truncate mb-2" id="admin-whoami"></div>
+      <button onclick="Admin.signOutAdmin()" class="btn btn-ghost w-full justify-center py-2 text-xs" style="background:rgba(255,255,255,.06);color:#e2e8f0;border-color:rgba(255,255,255,.12);"><i data-lucide="log-out" class="w-3.5 h-3.5"></i> Sign Out</button>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="flex-1 overflow-y-auto">
+    <div id="view-dashboard" class="p-6 max-w-6xl mx-auto">
+      <h2 class="text-xl font-black text-slate-800 mb-1">Dashboard</h2>
+      <p class="text-slate-500 text-sm mb-5">Overview across all registered businesses.</p>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="card p-4"><div class="text-2xl font-black text-slate-800" id="stat-biz-count">—</div><div class="text-xs text-slate-500 font-semibold mt-0.5">Total Businesses</div></div>
+        <div class="card p-4"><div class="text-2xl font-black text-slate-800" id="stat-disabled-count">—</div><div class="text-xs text-slate-500 font-semibold mt-0.5">Disabled Businesses</div></div>
+        <div class="card p-4"><div class="text-2xl font-black text-slate-800" id="stat-selected-emp-count">—</div><div class="text-xs text-slate-500 font-semibold mt-0.5">Employees (selected biz)</div></div>
+        <div class="card p-4"><div class="text-2xl font-black text-slate-800" id="stat-appid">—</div><div class="text-xs text-slate-500 font-semibold mt-0.5">Firestore App ID</div></div>
+      </div>
+      <div class="card p-4">
+        <div class="font-bold text-slate-700 text-sm mb-2 flex items-center gap-2"><i data-lucide="info" class="w-4 h-4 text-slate-400"></i> How to use this panel</div>
+        <ul class="text-xs text-slate-500 space-y-1.5 list-disc pl-4">
+          <li>Select a business from the left sidebar to view/edit its Settings, Employees, Invoices, Clients, Products and Expenses.</li>
+          <li>Every table row can be edited as raw JSON (full control) or deleted.</li>
+          <li>Use "Disable Business" on a business's Overview tab to instantly block that owner + all their employees from logging into the app — no need to touch Firebase Authentication.</li>
+          <li>"Custom Path Explorer" lets you browse any Firestore collection path directly, in case something isn't covered by the tabs above.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div id="view-business" class="hidden p-6 max-w-6xl mx-auto">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="text-xs text-slate-400 font-semibold mb-0.5">Business</div>
+          <h2 class="text-xl font-black text-slate-800" id="biz-title">—</h2>
+          <div class="text-[11px] text-slate-400 mono" id="biz-uid-display">—</div>
+        </div>
+        <div id="biz-status-badge"></div>
+      </div>
+
+      <div class="flex gap-1.5 mb-4 flex-wrap border-b border-slate-200 pb-2">
+        <div class="tabbtn active" data-tab="overview" onclick="Admin.switchBizTab('overview')">Overview</div>
+        <div class="tabbtn" data-tab="employees" onclick="Admin.switchBizTab('employees')">Employees</div>
+        <div class="tabbtn" data-tab="invoices" onclick="Admin.switchBizTab('invoices')">Invoices</div>
+        <div class="tabbtn" data-tab="clients" onclick="Admin.switchBizTab('clients')">Clients</div>
+        <div class="tabbtn" data-tab="products" onclick="Admin.switchBizTab('products')">Products</div>
+        <div class="tabbtn" data-tab="expenses" onclick="Admin.switchBizTab('expenses')">Expenses</div>
+      </div>
+
+      <div id="biztab-overview" class="biztab"></div>
+      <div id="biztab-employees" class="biztab hidden"></div>
+      <div id="biztab-invoices" class="biztab hidden"></div>
+      <div id="biztab-clients" class="biztab hidden"></div>
+      <div id="biztab-products" class="biztab hidden"></div>
+      <div id="biztab-expenses" class="biztab hidden"></div>
+    </div>
+
+    <div id="view-explorer" class="hidden p-6 max-w-6xl mx-auto">
+      <h2 class="text-xl font-black text-slate-800 mb-1">Custom Path Explorer</h2>
+      <p class="text-slate-500 text-sm mb-4">Browse any Firestore <strong>collection</strong> path directly. Example: <span class="mono bg-slate-100 px-1.5 py-0.5 rounded">artifacts/APP_ID/users/UID/invoices</span></p>
+      <div class="card p-4 mb-4">
+        <div class="flex gap-2">
+          <input id="explorer-path" class="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-sm mono outline-none focus:border-emerald-500" placeholder="artifacts/APP_ID/users/UID/collectionName">
+          <button onclick="Admin.exploreCustomPath()" class="btn btn-primary"><i data-lucide="search" class="w-4 h-4"></i> Browse</button>
+        </div>
+      </div>
+      <div id="explorer-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- JSON Editor Modal -->
+<div id="json-modal-bg" class="modal-bg">
+  <div class="modal">
+    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+      <div><div class="font-bold text-slate-800 text-sm" id="json-modal-title">Edit Document</div><div class="text-[11px] text-slate-400 mono" id="json-modal-path"></div></div>
+      <button onclick="Admin.closeJsonModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="p-4 flex-1 overflow-y-auto">
+      <p class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">⚠️ Saving here <strong>completely replaces</strong> this document with the JSON below. Keep the structure valid.</p>
+      <textarea id="json-modal-textarea" class="w-full h-80 mono text-xs p-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500" spellcheck="false"></textarea>
+      <p id="json-modal-error" class="text-red-500 text-xs mt-2 hidden"></p>
+    </div>
+    <div class="p-4 border-t border-slate-100 flex items-center justify-between gap-2">
+      <button onclick="Admin.deleteFromModal()" id="json-modal-delete-btn" class="btn btn-danger"><i data-lucide="trash-2" class="w-4 h-4"></i> Delete Document</button>
+      <div class="flex gap-2">
+        <button onclick="Admin.closeJsonModal()" class="btn btn-ghost">Cancel</button>
+        <button onclick="Admin.saveFromModal()" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, deleteDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CONFIG — must match the main app's Firebase project exactly.
+// ═══════════════════════════════════════════════════════════════════════════
+const firebaseConfig = { apiKey: "AIzaSyCV3G-BMVf2QRpibaS5MnwQybKixC4h9og", authDomain: "dev-ayurveda.firebaseapp.com", projectId: "dev-ayurveda", storageBucket: "dev-ayurveda.firebasestorage.app", messagingSenderId: "40760282698", appId: "1:40760282698:web:20e31100eed712631ca0b3" };
+const APP_ID = 'dev-ayurveda-pro-auth'; // same appId path segment used throughout the main app's Firestore paths
+
+// ⚠️ IMPORTANT: add the email(s) that are allowed to use this panel.
+// This is a convenience check only — the REAL gate is Firestore Security Rules
+// (see the rules snippet provided separately). Without matching rules, anyone
+// could still bypass this file and query Firestore directly.
+const ADMIN_EMAILS = [
+  // "owner@example.com",
+];
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let currentUser = null;
+let currentBizUid = null;
+let currentBizName = null;
+let bizDirectory = [];
+let jsonModalCtx = null; // { path: [...segments] }
+let docRegistry = new Map();
+let docRegistryCounter = 0;
+function registerDoc(pathSegs, data, label){
+  const key = 'd' + (docRegistryCounter++);
+  docRegistry.set(key, { pathSegs, data, label });
+  return key;
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+function toast(msg, type) {
+  const c = document.getElementById('toast-container'); if(!c) return;
+  const div = document.createElement('div');
+  const bg = type==='error' ? 'bg-red-600' : (type==='warning' ? 'bg-amber-500' : 'bg-emerald-600');
+  div.className = 'toast-item flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg text-white text-sm font-semibold ' + bg;
+  div.textContent = msg;
+  c.appendChild(div);
+  setTimeout(()=>{ div.remove(); }, 3200);
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function icons(){ if(window.lucide) lucide.createIcons(); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════════════════════
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('admin-email').value.trim().toLowerCase();
+  const pw = document.getElementById('admin-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  errEl.classList.add('hidden');
+  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Signing in...'; icons();
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+    // onAuthStateChanged below handles the allowlist check + UI switch
+  } catch (err) {
+    const map = {
+      'auth/invalid-credential': 'Email ya password galat hai.',
+      'auth/user-not-found': 'Is email se koi account nahi mila.',
+      'auth/too-many-requests': 'Bahut zyada attempts. Kuch der baad try karein.',
+      'auth/network-request-failed': 'Internet connection check karein.'
+    };
+    errEl.textContent = map[err.code] || (err.message || 'Login fail ho gaya.');
+    errEl.classList.remove('hidden');
+  } finally {
+    btn.innerHTML = 'Sign In <i data-lucide="arrow-right" class="w-4 h-4"></i>'; icons();
+  }
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if(!user){ showLogin(); return; }
+  const email = (user.email || '').toLowerCase();
+  if(ADMIN_EMAILS.length && !ADMIN_EMAILS.includes(email)){
+    toast('Yeh account admin panel access ke liye authorized nahi hai.', 'error');
+    await signOut(auth);
+    showLogin('Aapka account admin panel ke liye allow-list mein nahi hai. admin.html ke top mein ADMIN_EMAILS array mein apna email add karein.');
+    return;
+  }
+  if(!ADMIN_EMAILS.length){
+    toast('ADMIN_EMAILS list khaali hai — koi bhi valid login is panel mein aa sakta hai. Turant admin.html mein apna email add karein!', 'warning');
+  }
+  currentUser = user;
+  document.getElementById('admin-whoami').textContent = user.email;
+  showAdminApp();
+});
+
+function showLogin(msg){
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('admin-app').classList.add('hidden');
+  icons();
+  if(msg){ const errEl = document.getElementById('login-error'); errEl.textContent = msg; errEl.classList.remove('hidden'); }
+}
+function showAdminApp(){
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('admin-app').classList.remove('hidden');
+  document.getElementById('stat-appid').textContent = APP_ID;
+  Admin.loadBusinesses();
+  icons();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ADMIN NAMESPACE
+// ═══════════════════════════════════════════════════════════════════════════
+const Admin = {};
+window.Admin = Admin;
+
+Admin.signOutAdmin = async function(){ await signOut(auth); location.reload(); };
+
+Admin.showDashboard = function(){
+  Admin.setNav('dashboard');
+  document.getElementById('view-dashboard').classList.remove('hidden');
+  document.getElementById('view-business').classList.add('hidden');
+  document.getElementById('view-explorer').classList.add('hidden');
+};
+Admin.showCustomExplorer = function(){
+  Admin.setNav('explorer');
+  document.getElementById('view-dashboard').classList.add('hidden');
+  document.getElementById('view-business').classList.add('hidden');
+  document.getElementById('view-explorer').classList.remove('hidden');
+};
+Admin.setNav = function(key){
+  document.querySelectorAll('.navitem').forEach(el => el.classList.toggle('active', el.dataset.nav===key));
+};
+
+// ── Business directory (nested under artifacts/APP_ID — must match the path
+// the main app's _syncBizDirectory() writes to) ──────────────────────────
+Admin.loadBusinesses = async function(){
+  const listEl = document.getElementById('biz-list');
+  listEl.innerHTML = '<div class="text-slate-500 text-xs px-2 py-3">Loading...</div>';
+  try {
+    const snap = await getDocs(collection(db, 'artifacts', APP_ID, 'publicBizDirectory'));
+    bizDirectory = [];
+    snap.forEach(d => bizDirectory.push({ uid: d.id, ...d.data() }));
+    document.getElementById('stat-biz-count').textContent = bizDirectory.length;
+    Admin.renderBusinessList();
+  } catch(err) {
+    console.error(err);
+    listEl.innerHTML = '<div class="text-red-400 text-xs px-2 py-3">Load fail: ' + esc(err.message) + '<br><br>Firestore rules check karein — admin ko artifacts/' + APP_ID + '/publicBizDirectory read karne ki permission chahiye.</div>';
+  }
+};
+Admin.renderBusinessList = function(){
+  const q = (document.getElementById('biz-search').value || '').toLowerCase();
+  const listEl = document.getElementById('biz-list');
+  const filtered = bizDirectory.filter(b => !q || (b.businessName||'').toLowerCase().includes(q) || b.uid.toLowerCase().includes(q));
+  if(!filtered.length){ listEl.innerHTML = '<div class="text-slate-500 text-xs px-2 py-3">Koi business nahi mila.</div>'; return; }
+  listEl.innerHTML = filtered.map(b => `
+    <div onclick="Admin.selectBusiness('${b.uid}','${esc((b.businessName||'Unnamed').replace(/'/g,"\\'"))}')" class="px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 ${currentBizUid===b.uid?'bg-white/10':''}">
+      <div class="text-white text-xs font-bold truncate">${esc(b.businessName||'Unnamed Business')}</div>
+      <div class="text-slate-500 text-[10px] mono truncate">${esc(b.uid)}</div>
+    </div>`).join('');
+};
+
+// ── Select + load a business ────────────────────────────────────────────
+Admin.selectBusiness = async function(uid, name){
+  currentBizUid = uid; currentBizName = name;
+  Admin.setNav('');
+  document.getElementById('view-dashboard').classList.add('hidden');
+  document.getElementById('view-explorer').classList.add('hidden');
+  document.getElementById('view-business').classList.remove('hidden');
+  document.getElementById('biz-title').textContent = name || 'Unnamed Business';
+  document.getElementById('biz-uid-display').textContent = uid;
+  Admin.renderBusinessList();
+  Admin.switchBizTab('overview');
+};
+
+Admin.switchBizTab = function(tab){
+  document.querySelectorAll('.tabbtn').forEach(el => el.classList.toggle('active', el.dataset.tab===tab));
+  document.querySelectorAll('.biztab').forEach(el => el.classList.add('hidden'));
+  document.getElementById('biztab-'+tab).classList.remove('hidden');
+  if(tab==='overview') Admin.loadOverview();
+  else if(tab==='employees') Admin.loadEmployees();
+  else Admin.loadGenericCollection(tab);
+};
+
+// ── OVERVIEW tab: settings doc + disable toggle ────────────────────────────
+Admin.loadOverview = async function(){
+  const el = document.getElementById('biztab-overview');
+  el.innerHTML = '<div class="text-slate-400 text-sm">Loading...</div>';
+  try {
+    const ref = doc(db, 'artifacts', APP_ID, 'users', currentBizUid, 'config', 'settings');
+    const snap = await getDoc(ref);
+    const data = snap.exists() ? snap.data() : {};
+    const disabled = data.adminDisabled === true;
+    document.getElementById('biz-status-badge').innerHTML = disabled
+      ? '<span class="badge bg-red-100 text-red-700">Disabled</span>'
+      : '<span class="badge bg-emerald-100 text-emerald-700">Active</span>';
+    el.innerHTML = `
+      <div class="grid md:grid-cols-2 gap-4 mb-4">
+        <div class="card p-4">
+          <div class="font-bold text-slate-700 text-sm mb-3">Business Info</div>
+          <div class="text-sm space-y-1.5 text-slate-600">
+            <div><span class="text-slate-400">Owner:</span> ${esc(data.owner||'—')}</div>
+            <div><span class="text-slate-400">Phone:</span> ${esc(data.phone||'—')}</div>
+            <div><span class="text-slate-400">GSTIN:</span> ${esc(data.gstin||'—')}</div>
+            <div><span class="text-slate-400">Address:</span> ${esc(data.address||'—')}</div>
+          </div>
+        </div>
+        <div class="card p-4">
+          <div class="font-bold text-slate-700 text-sm mb-3">Access Control</div>
+          <p class="text-xs text-slate-500 mb-3">Disabling blocks the owner AND every employee of this business from using the app immediately (checked on next data sync — usually within seconds while the app is open, or on next login).</p>
+          ${disabled
+            ? `<button onclick="Admin.setDisabled(false)" class="btn btn-primary w-full justify-center"><i data-lucide="unlock" class="w-4 h-4"></i> Enable Business</button>`
+            : `<button onclick="Admin.setDisabled(true)" class="btn btn-danger w-full justify-center"><i data-lucide="lock" class="w-4 h-4"></i> Disable Business</button>`}
+        </div>
+      </div>
+      <div class="card p-4">
+        <div class="flex items-center justify-between mb-2">
+          <div class="font-bold text-slate-700 text-sm">Raw Settings Document</div>
+          <button onclick="Admin.openJsonEditor('${registerDoc(['artifacts',APP_ID,'users',currentBizUid,'config','settings'], data, 'Settings')}')" class="btn btn-ghost text-xs py-1.5"><i data-lucide="code" class="w-3.5 h-3.5"></i> Edit Full JSON</button>
+        </div>
+        <pre class="mono text-[11px] bg-slate-50 rounded-xl p-3 overflow-x-auto max-h-64">${esc(JSON.stringify(data, null, 2))}</pre>
+      </div>`;
+    icons();
+  } catch(err) {
+    console.error(err);
+    el.innerHTML = '<div class="text-red-500 text-sm">Load fail: ' + esc(err.message) + '</div>';
+  }
+};
+Admin.setDisabled = async function(val){
+  try {
+    const ref = doc(db, 'artifacts', APP_ID, 'users', currentBizUid, 'config', 'settings');
+    await setDoc(ref, { adminDisabled: val }, { merge: true });
+    toast(val ? 'Business disabled.' : 'Business enabled.');
+    Admin.loadOverview();
+  } catch(err) { toast('Fail: ' + err.message, 'error'); }
+};
+
+// ── EMPLOYEES tab ───────────────────────────────────────────────────────
+Admin.loadEmployees = async function(){
+  const el = document.getElementById('biztab-employees');
+  el.innerHTML = '<div class="text-slate-400 text-sm">Loading...</div>';
+  try {
+    const ref = doc(db, 'artifacts', APP_ID, 'users', currentBizUid, 'config', 'employees');
+    const snap = await getDoc(ref);
+    const list = (snap.exists() && snap.data().list) || [];
+    document.getElementById('stat-selected-emp-count').textContent = list.length;
+    if(!list.length){ el.innerHTML = '<div class="card p-6 text-center text-slate-400 text-sm">Is business ka koi employee nahi mila.</div>'; return; }
+    el.innerHTML = `<div class="card overflow-x-auto"><table>
+      <thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
+      <tbody>${list.map((e,i) => `
+        <tr>
+          <td class="font-semibold text-slate-700">${esc(e.name||'—')}</td>
+          <td class="mono text-xs">${esc(e.email||'—')}</td>
+          <td>${esc(e.dept||'—')}</td>
+          <td>${e.active===false ? '<span class="badge bg-red-100 text-red-700">Inactive</span>' : '<span class="badge bg-emerald-100 text-emerald-700">Active</span>'}</td>
+          <td style="text-align:right">
+            <button onclick="Admin.toggleEmployeeActive(${i})" class="btn btn-ghost text-xs py-1 px-2.5">${e.active===false?'Activate':'Deactivate'}</button>
+            <button onclick="Admin.deleteEmployee(${i})" class="btn btn-danger text-xs py-1 px-2.5">Delete</button>
+          </td>
+        </tr>`).join('')}
+      </tbody></table></div>
+      <p class="text-[11px] text-slate-400 mt-2">Passwords are stored as one-way hashes and are not viewable here — use "Reset password" inside the main app's Employees section if a staff member forgets theirs.</p>`;
+    window._adminEmpCache = list;
+  } catch(err) { console.error(err); el.innerHTML = '<div class="text-red-500 text-sm">Load fail: ' + esc(err.message) + '</div>'; }
+};
+Admin.toggleEmployeeActive = async function(idx){
+  try {
+    const list = window._adminEmpCache.slice();
+    list[idx] = Object.assign({}, list[idx], { active: list[idx].active===false ? true : false });
+    const ref = doc(db, 'artifacts', APP_ID, 'users', currentBizUid, 'config', 'employees');
+    await setDoc(ref, { list: list, updatedAt: new Date().toISOString() });
+    toast('Employee status updated.');
+    Admin.loadEmployees();
+  } catch(err) { toast('Fail: ' + err.message, 'error'); }
+};
+Admin.deleteEmployee = async function(idx){
+  if(!confirm('Is employee ko permanently remove karna hai?')) return;
+  try {
+    const list = window._adminEmpCache.filter((_,i) => i!==idx);
+    const ref = doc(db, 'artifacts', APP_ID, 'users', currentBizUid, 'config', 'employees');
+    await setDoc(ref, { list: list, updatedAt: new Date().toISOString() });
+    toast('Employee deleted.');
+    Admin.loadEmployees();
+  } catch(err) { toast('Fail: ' + err.message, 'error'); }
+};
+
+// ── GENERIC COLLECTIONS: invoices / clients / products / expenses ─────────
+const COLLECTION_PREVIEW = {
+  invoices: d => [d.invoiceId || d.id || '—', (d.client && d.client.name) || '—', d.grandTotal!=null?('₹'+d.grandTotal):'—', d.status || '—'],
+  clients: d => [d.name || '—', d.phone || '—', d.gstin || '—', d.balance!=null?('₹'+d.balance):'—'],
+  products: d => [d.name || '—', d.price!=null?('₹'+d.price):'—', d.stock!=null?d.stock:'—', d.category || '—'],
+  expenses: d => [d.date || '—', d.category || '—', d.amount!=null?('₹'+d.amount):'—', d.desc || '—'],
+};
+const COLLECTION_HEADERS = {
+  invoices: ['Invoice #','Client','Total','Status'],
+  clients: ['Name','Phone','GSTIN','Balance'],
+  products: ['Name','Price','Stock','Category'],
+  expenses: ['Date','Category','Amount','Note'],
+};
+Admin.loadGenericCollection = async function(collName){
+  const el = document.getElementById('biztab-'+collName);
+  el.innerHTML = '<div class="text-slate-400 text-sm">Loading...</div>';
+  try {
+    const colRef = collection(db, 'artifacts', APP_ID, 'users', currentBizUid, collName);
+    const snap = await getDocs(query(colRef, limit(200)));
+    const docs = []; snap.forEach(d => docs.push({ id: d.id, data: d.data() }));
+    if(!docs.length){ el.innerHTML = `<div class="card p-6 text-center text-slate-400 text-sm">Koi ${esc(collName)} record nahi mila.</div>`; return; }
+    const headers = COLLECTION_HEADERS[collName] || ['Field 1','Field 2','Field 3','Field 4'];
+    const previewFn = COLLECTION_PREVIEW[collName] || (d => Object.values(d).slice(0,4));
+    el.innerHTML = `<div class="text-[11px] text-slate-400 mb-2">Showing latest ${docs.length} record(s) (max 200).</div>
+      <div class="card overflow-x-auto"><table>
+      <thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}<th style="text-align:right">Actions</th></tr></thead>
+      <tbody>${docs.map(({id,data}) => {
+        const cols = previewFn(data);
+        return `<tr>${cols.map(c=>`<td>${esc(c)}</td>`).join('')}<td style="text-align:right">
+          <button onclick="Admin.openJsonEditor('${registerDoc(['artifacts',APP_ID,'users',currentBizUid,collName,id], data, collName+' / '+id)}')" class="btn btn-ghost text-xs py-1 px-2.5">Edit JSON</button>
+          <button onclick="Admin.deleteDocDirect('artifacts/${APP_ID}/users/${currentBizUid}/${collName}/${id}')" class="btn btn-danger text-xs py-1 px-2.5">Delete</button>
+        </td></tr>`;
+      }).join('')}</tbody></table></div>`;
+    icons();
+  } catch(err) { console.error(err); el.innerHTML = '<div class="text-red-500 text-sm">Load fail: ' + esc(err.message) + '</div>'; }
+};
+Admin.deleteDocDirect = async function(pathStr){
+  if(!confirm('Yeh document permanently delete karna hai? Yeh undo nahi ho sakta.')) return;
+  try {
+    const segs = pathStr.split('/');
+    await deleteDoc(doc(db, ...segs));
+    toast('Document deleted.');
+    // reload whichever view is open
+    if(currentBizUid) Admin.switchBizTab(document.querySelector('.tabbtn.active').dataset.tab);
+    else Admin.exploreCustomPath();
+  } catch(err) { toast('Fail: ' + err.message, 'error'); }
+};
+
+// ── CUSTOM PATH EXPLORER ────────────────────────────────────────────────
+Admin.exploreCustomPath = async function(){
+  const pathStr = document.getElementById('explorer-path').value.trim().replace(/^\/+|\/+$/g,'');
+  const resultsEl = document.getElementById('explorer-results');
+  if(!pathStr){ toast('Path daalein', 'warning'); return; }
+  const segs = pathStr.split('/').filter(Boolean);
+  if(segs.length % 2 !== 0){ resultsEl.innerHTML = '<div class="text-amber-600 text-sm">Yeh ek collection path lagta hai jiske segments odd number mein nahi hone chahiye thay for a collection (should end at a collection name, i.e. even number of segments is a document, odd going one level up is a collection). Try: artifacts/'+APP_ID+'/users/UID/invoices</div>'; }
+  resultsEl.innerHTML = '<div class="text-slate-400 text-sm">Loading...</div>';
+  try {
+    const colRef = collection(db, ...segs);
+    const snap = await getDocs(query(colRef, limit(200)));
+    const docs = []; snap.forEach(d => docs.push({ id: d.id, data: d.data() }));
+    if(!docs.length){ resultsEl.innerHTML = '<div class="card p-6 text-center text-slate-400 text-sm">Koi documents nahi mile is path pe.</div>'; return; }
+    resultsEl.innerHTML = `<div class="text-[11px] text-slate-400 mb-2">${docs.length} document(s) found.</div>
+      <div class="card overflow-x-auto"><table><thead><tr><th>Doc ID</th><th>Preview</th><th style="text-align:right">Actions</th></tr></thead>
+      <tbody>${docs.map(({id,data}) => `<tr>
+        <td class="mono text-xs">${esc(id)}</td>
+        <td class="mono text-[11px] text-slate-500">${esc(JSON.stringify(data).slice(0,80))}...</td>
+        <td style="text-align:right">
+          <button onclick="Admin.openJsonEditor('${registerDoc(segs.concat([id]), data, id)}')" class="btn btn-ghost text-xs py-1 px-2.5">Edit JSON</button>
+          <button onclick="Admin.deleteDocDirect('${segs.concat([id]).join('/')}')" class="btn btn-danger text-xs py-1 px-2.5">Delete</button>
+        </td></tr>`).join('')}</tbody></table></div>`;
+    icons();
+  } catch(err) { console.error(err); resultsEl.innerHTML = '<div class="text-red-500 text-sm">Load fail: ' + esc(err.message) + '</div>'; }
+};
+
+// ── JSON EDIT MODAL (shared by every tab) ──────────────────────────────────
+Admin.openJsonEditor = function(key){
+  const entry = docRegistry.get(key);
+  if(!entry){ toast('Document data expired — tab ko refresh karke dobara try karein.', 'error'); return; }
+  jsonModalCtx = { path: entry.pathSegs };
+  document.getElementById('json-modal-title').textContent = 'Edit — ' + entry.label;
+  document.getElementById('json-modal-path').textContent = entry.pathSegs.join('/');
+  document.getElementById('json-modal-textarea').value = JSON.stringify(entry.data, null, 2);
+  document.getElementById('json-modal-error').classList.add('hidden');
+  document.getElementById('json-modal-bg').classList.add('open');
+  icons();
+};
+Admin.closeJsonModal = function(){ document.getElementById('json-modal-bg').classList.remove('open'); jsonModalCtx = null; };
+Admin.saveFromModal = async function(){
+  if(!jsonModalCtx) return;
+  const errEl = document.getElementById('json-modal-error');
+  let parsed;
+  try { parsed = JSON.parse(document.getElementById('json-modal-textarea').value); }
+  catch(e){ errEl.textContent = 'Invalid JSON: ' + e.message; errEl.classList.remove('hidden'); return; }
+  try {
+    await setDoc(doc(db, ...jsonModalCtx.path), parsed);
+    toast('Saved successfully.');
+    Admin.closeJsonModal();
+    if(currentBizUid && document.getElementById('view-business').classList.contains('hidden')===false){
+      const activeTab = document.querySelector('.tabbtn.active'); if(activeTab) Admin.switchBizTab(activeTab.dataset.tab);
+    } else if(!document.getElementById('view-explorer').classList.contains('hidden')) {
+      Admin.exploreCustomPath();
+    }
+  } catch(err) { errEl.textContent = 'Save fail: ' + err.message; errEl.classList.remove('hidden'); }
+};
+Admin.deleteFromModal = async function(){
+  if(!jsonModalCtx) return;
+  if(!confirm('Yeh document permanently delete karna hai?')) return;
+  try {
+    await deleteDoc(doc(db, ...jsonModalCtx.path));
+    toast('Document deleted.');
+    Admin.closeJsonModal();
+    if(currentBizUid){ const activeTab = document.querySelector('.tabbtn.active'); if(activeTab) Admin.switchBizTab(activeTab.dataset.tab); }
+  } catch(err) { toast('Fail: ' + err.message, 'error'); }
+};
+
+icons();
+</script>
+</body>
 </html>
