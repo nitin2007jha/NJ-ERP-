@@ -63,27 +63,18 @@ pre{background:var(--pl);padding:12px;border-radius:12px;overflow:auto;font-size
 <nav id="bn"></nav><div id="toast"></div><div id="mods"></div>
 <script>
 /* ============ CONFIG — apna Firebase config & admin emails yahan daalo ============ */
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyCV3G-BMVf2QRpibaS5MnwQybKixC4h9og",
-  authDomain: "dev-ayurveda.firebaseapp.com",
-  databaseURL: "https://dev-ayurveda-default-rtdb.firebaseio.com",
-  projectId: "dev-ayurveda",
-  storageBucket: "dev-ayurveda.firebasestorage.app",
-  messagingSenderId: "40760282698",
-  appId: "1:40760282698:web:20e31100eed712631ca0b3",
-  measurementId: "G-THLCJRV6MZ"
-};,
- appId:"1:40760282698:web:20e31100eed712631ca0b3",            // artifacts/{appId}/...
- admins:["njonlinebharat@gmail.com"],        // sirf ye emails login kar sakte hain
- gods:["njonlinebharat@gmail.com"],          // inme se hi God Mode unlock hoga (admins ka subset)
+const CFG={
+ firebase:{apiKey:"AIzaSyCV3G-BMVf2QRpibaS5MnwQybKixC4h9og",authDomain:"dev-ayurveda.firebaseapp.com",databaseURL:"https://dev-ayurveda-default-rtdb.firebaseio.com",projectId:"dev-ayurveda",storageBucket:"dev-ayurveda.firebasestorage.app",messagingSenderId:"40760282698",appId:"1:40760282698:web:20e31100eed712631ca0b3",measurementId:"G-THLCJRV6MZ"},
+ appId:"1:40760282698:web:20e31100eed712631ca0b3", // artifacts/{appId}/... — Firestore me `artifacts` ke andar jo doc id hai wahi daalo
+ fallbackAdmins:["njonlinebharat@gmail.com"], // sirf tab use hota hai jab analytics/admin_config padh na paye
+ adminDoc:"analytics/admin_config",  // doc ke field `admins` (string, comma-separated emails) se admins; optional field `gods` se God Mode, na ho to sab admins god
  idleMin:15, godMin:30, inactiveDays:7, env:"PROD", pushUrl:"" // e.g. https://your-vercel.app/api/send-push
 };
 /* ================================================================================== */
 firebase.initializeApp(CFG.firebase);const auth=firebase.auth(),db=firebase.firestore();
 const $=s=>document.querySelector(s),e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const R=()=>db.collection('artifacts').doc(CFG.appId),U=u=>R().collection('users').doc(u);
-const S={tab:'dash',T:{},inv:[],ord:[],loaded:false,god:false,godUntil:0,idle:0,seg:'all',q:'',sort:'rev',tap:0};
+const S={admins:[],gods:[],tab:'dash',T:{},inv:[],ord:[],loaded:false,god:false,godUntil:0,idle:0,seg:'all',q:'',sort:'rev',tap:0};
 const inr=n=>'₹'+Math.round(n||0).toLocaleString('en-IN');
 const dt=d=>{try{d=d?.toDate?d.toDate():d?new Date(d):null;return d&&!isNaN(d)?d:null}catch(_){return null}};
 const ago=d=>{d=dt(d);if(!d)return 'never';const x=(Date.now()-d)/864e5;return x<1?'today':x<2?'yesterday':Math.floor(x)+'d ago'};
@@ -104,7 +95,8 @@ async function reauth(){const p=prompt('Password dobara daalo (re-auth)');if(!p)
 /* ---------- auth ---------- */
 async function doLogin(ev){ev.preventDefault();const a=+localStorage.lk||0;if(Date.now()<a)return $('#lerr').textContent='Zyada attempts. Thodi der baad try karo.',false;
 try{await auth.signInWithEmailAndPassword($('#em').value.trim(),$('#pw').value);localStorage.fails=0}catch(x){const f=(+localStorage.fails||0)+1;localStorage.fails=f;if(f>=5){localStorage.lk=Date.now()+3e5;localStorage.fails=0}$('#lerr').textContent='Login fail'}return false}
-auth.onAuthStateChanged(u=>{const ok=u&&!u.isAnonymous&&CFG.admins.map(x=>x.toLowerCase()).includes((u.email||'').toLowerCase());
+async function loadAdmins(){let x={};try{x=(await db.doc(CFG.adminDoc).get()).data()||{}}catch(_){x={admins:CFG.fallbackAdmins}}const f=k=>[].concat(x[k]||[]).join(',').split(/[,;\s]+/).map(v=>v.trim().toLowerCase()).filter(Boolean);S.admins=f('admins');S.gods=f('gods').length?f('gods'):S.admins}
+auth.onAuthStateChanged(async u=>{let ok=false;if(u&&!u.isAnonymous){try{await loadAdmins();ok=S.admins.includes((u.email||'').toLowerCase())}catch(x){$('#lerr').textContent='Admin config padh nahi paya: '+x.message;auth.signOut();return}}
  if(u&&!ok){auth.signOut();$('#lerr').textContent='Ye account admin nahi hai.';return}
  $('#login').style.display=ok?'none':'flex';$('#app').style.display=ok?'grid':'none';if(ok){$('#env').textContent=CFG.env;nav();go('dash');refresh()}});
 function out(){S.god=false;document.body.classList.remove('god');auth.signOut()}
@@ -118,7 +110,7 @@ function tabs(){return TABS.concat(S.god?GODT:[])}
 function nav(){const t=tabs();$('#nav').innerHTML=t.map(([k,n])=>`<button class="nv ${S.tab===k?'on':''}" onclick="go('${k}')">${n}</button>`).join('');
  const b=t.slice(0,4).concat([['more','More']]);$('#bn').innerHTML=b.map(([k,n])=>`<button class="${S.tab===k?'on':''}" onclick="${k==='more'?'more()':`go('${k}')`}">${n}</button>`).join('')}
 function more(){const m=modal('<div class="stack">'+tabs().slice(4).map(([k,n])=>`<button class="btn" style="width:100%" onclick="closeM();go('${k}')">${n}</button>`).join('')+'</div>')}
-$('#logo').onclick=()=>{if(CFG.gods.includes((auth.currentUser?.email||'').toLowerCase())){S.tap++;clearTimeout(S.tt);S.tt=setTimeout(()=>S.tap=0,2500);if(S.tap>=7){S.tap=0;godOn()}}};
+$('#logo').onclick=()=>{if((S.gods||[]).includes((auth.currentUser?.email||'').toLowerCase())){S.tap++;clearTimeout(S.tt);S.tt=setTimeout(()=>S.tap=0,2500);if(S.tap>=7){S.tap=0;godOn()}}};
 function go(t){S.tab=t;nav();$('#ttl').textContent=(tabs().find(x=>x[0]===t)||[0,''])[1];render()}
 /* ---------- data load ---------- */
 async function cg(name,lim=1500){try{const s=await db.collectionGroup(name).limit(lim).get();return s.docs.filter(d=>uidOf(d))}catch(x){console.warn(name,x.message);S.err=(S.err||'')+name+': '+x.message+' | ';return[]}}
@@ -181,14 +173,13 @@ function auditV(){return '<div class="card"><b>Admin audit log</b><div id="al"><
 async function loadAudit(){try{const s=await R().collection('adminAudit').orderBy('ts','desc').limit(100).get();S.al=s.docs.map(d=>d.data());$('#al').innerHTML=S.al.map(x=>`<div class="row" style="cursor:default"><div class="g"><b>${e(x.action)} ${x.god?'<span class="chip">GOD</span>':''}</b><small>${e(x.email)} · ${e(x.target)} · ${e(x.reason)}</small></div><small>${ago(x.ts)}</small></div>`).join('')||'<small>Empty</small>'}catch(x){$('#al').innerHTML='<small>Read nahi ho paya: '+e(x.message)+'</small>'}}
 function csv(){const r=[['time','email','action','target','reason','god']].concat((S.al||[]).map(x=>[dt(x.ts)?.toISOString(),x.email,x.action,x.target,x.reason,x.god]));dl('audit.csv',r.map(l=>l.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(',')).join('\n'),'text/csv')}
 function dl(n,c,t='application/json'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:t}));a.download=n;a.click()}
-const RULES=`function isAdmin(){return request.auth!=null && request.auth.token.email in ['owner@example.com'];}
-match /artifacts/{app}/users/{uid}/{document=**}{
-  allow read,write: if request.auth!=null && request.auth.uid==uid && request.auth.token.firebase.sign_in_provider!='anonymous';
-  allow read: if isAdmin();   // god writes: add 'allow write: if isAdmin();'
-}
-match /artifacts/{app}/adminAudit/{id}{ allow create: if isAdmin(); allow read: if isAdmin(); allow update,delete: if false; }
-match /{path=**}/{col}/{id}{ allow read: if isAdmin() && col in ['invoices','clients','products','expenses','employees','onlineOrders']; }`;
-function set(){const g=CFG.gods.includes((auth.currentUser?.email||'').toLowerCase());return `<div class="stack"><div class="card stack"><b>Account</b><small>${e(auth.currentUser.email)} · idle timeout ${CFG.idleMin}m</small></div>
+const RULES=`function isAdmin(){ return realUser() && request.auth.token.email in get(/databases/$(database)/documents/analytics/admin_config).data.admins.split(','); }
+match /analytics/admin_config { allow read: if isAdmin(); }
+match /artifacts/{appId}/adminAudit/{id} { allow read, create: if isAdmin(); allow update, delete: if false; }
+match /artifacts/{appId}/config/{d} { allow read: if signedIn(); allow write: if isAdmin(); }
+match /artifacts/{appId}/users/{uid}/{document=**} { allow write: if isAdmin(); }  // God writes
+match /{path=**}/{col}/{id} { allow read: if isAdmin() && col in ['invoices','clients','products','expenses','employees','onlineOrders']; }`;
+function set(){const g=(S.gods||[]).includes((auth.currentUser?.email||'').toLowerCase());return `<div class="stack"><div class="card stack"><b>Account</b><small>${e(auth.currentUser.email)} · idle timeout ${CFG.idleMin}m</small></div>
  ${g?`<div class="card stack"><b>God Mode</b><small>Poora data inspect/edit, console, panic button. Password re-auth lagta hai. ${CFG.godMin} min baad auto-off. Har action audit hota hai.</small><button class="btn pr" onclick="godOn()">${S.god?'God Mode ON — extend':'Unlock God Mode'}</button>${S.god?'<button class="btn" onclick="godOff()">Turn off</button>':''}</div>`:''}
  <div class="card stack"><b>Firestore rules (zaroori — asli security yahi hai)</b><small>Panel ka email check sirf UI gate hai. Rules me bhi same admin email daalo, warna koi bhi data padh sakta hai.</small><pre>${e(RULES)}</pre></div>
  <div class="card stack"><b>Thresholds</b><small>Inactive = ${CFG.inactiveDays} din. Config object me badlo (top of file).</small></div></div>`}
@@ -204,7 +195,7 @@ async function note(u){await U(u).set({adminNote:$('#nt').value},{merge:true});S
 async function exportT(u){toast('Export ho raha hai…');const out={};for(const c of['invoices','clients','products','expenses','employees','onlineOrders','notifications','purchaseOrders','branches','appointments']){try{out[c]=(await U(u).collection(c).limit(2000).get()).docs.map(d=>({id:d.id,...d.data()}))}catch(_){}}await audit('export',u);dl('tenant_'+u+'.json',JSON.stringify(out,(k,v)=>v&&v.toDate?v.toDate().toISOString():v,1))}
 async function suspend(u){const t=S.T[u],r=await ask((t.susp?'Unsuspend ':'Suspend ')+t.name,t.name);if(!r||!await reauth())return;await U(u).set({suspended:!t.susp},{merge:true});await audit('suspend',u,{s:t.susp},{s:!t.susp},r.reason);t.susp=!t.susp;toast('Done');closeM()}
 /* ---------- god mode ---------- */
-async function godOn(){if(!CFG.gods.includes((auth.currentUser?.email||'').toLowerCase()))return;if(!await reauth())return;S.god=true;S.godUntil=Date.now()+CFG.godMin*6e4;document.body.classList.add('god');$('#godbar').style.display='block';nav();await audit('god_on');toast('God Mode ON');if(S.tab==='set')render()}
+async function godOn(){if(!(S.gods||[]).includes((auth.currentUser?.email||'').toLowerCase()))return;if(!await reauth())return;S.god=true;S.godUntil=Date.now()+CFG.godMin*6e4;document.body.classList.add('god');$('#godbar').style.display='block';nav();await audit('god_on');toast('God Mode ON');if(S.tab==='set')render()}
 function godOff(){S.god=false;document.body.classList.remove('god');$('#godbar').style.display='none';if(['exp','con','panic'].includes(S.tab))S.tab='dash';nav();go(S.tab);audit('god_off')}
 function exp(){return `<div class="card stack"><b>Raw Firestore editor</b><small>Path artifacts/${e(CFG.appId)}/ ke baad ka relative path (document ke liye even segments, collection ke liye odd). Eg: users/UID/products</small>
 <input id="pth" value="${e(S.path||'')}" placeholder="users/UID/products"><button class="btn pr" onclick="loadP()">Load</button><div id="pv"></div></div>`}
