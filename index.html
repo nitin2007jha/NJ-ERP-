@@ -71,7 +71,7 @@ const CFG={
  idleMin:15, godMin:30, inactiveDays:7, env:"PROD", pushUrl:"" // e.g. https://your-vercel.app/api/send-push
 };
 /* ================================================================================== */
-firebase.initializeApp(CFG.firebase);const auth=firebase.auth(),db=firebase.firestore();
+firebase.initializeApp(CFG.firebase);const auth=firebase.auth(),db=firebase.firestore();db.settings({experimentalForceLongPolling:true,merge:true});
 const $=s=>document.querySelector(s),e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const R=()=>db.collection('artifacts').doc(CFG.appId),U=u=>R().collection('users').doc(u);
 const S={admins:[],gods:[],tab:'dash',T:{},inv:[],ord:[],loaded:false,god:false,godUntil:0,idle:0,seg:'all',q:'',sort:'rev',tap:0};
@@ -114,10 +114,10 @@ $('#logo').onclick=()=>{if((S.gods||[]).includes((auth.currentUser?.email||'').t
 function go(t){S.tab=t;nav();$('#ttl').textContent=(tabs().find(x=>x[0]===t)||[0,''])[1];render()}
 /* ---------- data load ---------- */
 const W=p=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error('timeout 20s')),2e4))]);
-async function cg(name,lim=1500){try{const s=await W(db.collectionGroup(name).limit(lim).get());return s.docs.filter(d=>uidOf(d))}catch(x){console.warn(name,x.message);S.err=(S.err||'')+name+': '+x.message+' | ';return[]}}
+async function cg(name,lim=600){try{const s=await W(db.collectionGroup(name).limit(lim).get());return s.docs.filter(d=>uidOf(d))}catch(x){console.warn(name,x.message);S.err=(S.err||'')+name+': '+x.message+' | ';return[]}}
 function T(u){return S.T[u]||(S.T[u]={uid:u,name:u.slice(0,8),email:'',phone:'',gst:'',inv:0,rev:0,last:null,first:null,cli:0,prod:0,stock:0,exp:0,emp:0,ord:0,pend:0,week:0,month:0,mrev:0})}
 async function refresh(f){try{await refresh0(f)}catch(x){console.error(x);$('#main').innerHTML='<div class="card"><b>Panel error:</b> '+e(x.message)+'<pre>'+e(x.stack||'')+'</pre></div>'}}
-async function refresh0(f){if(!auth.currentUser)return;$('#main').innerHTML='<div class="sk"></div><div class="sk"></div><div class="sk"></div>';S.T={};S.err='';
+async function refresh0(f){if(!auth.currentUser)return;$('#main').innerHTML='<div class="sk"></div><div class="sk"></div><div class="sk"></div>';S.T={};S.err='';try{await W(db.doc(CFG.adminDoc).get());S.diag='admin_config read OK'}catch(x){S.diag='admin_config read: '+x.message}
  const [us,inv,cli,pr,ex,em,od]=await Promise.all([W(db.collection('artifacts').doc(CFG.appId).collection('users').limit(2000).get()).catch(x=>{S.err+='users: '+x.message;return{docs:[]}}),cg('invoices'),cg('clients'),cg('products'),cg('expenses'),cg('employees'),cg('onlineOrders')]);
  us.docs.forEach(d=>{const x=d.data(),t=T(d.id);t.name=x.businessName||x.business||x.name||x.companyName||t.name;t.email=x.email||'';t.phone=x.phone||x.mobile||'';t.gst=x.gstin||x.gst||'';t.plan=x.plan||'';t.susp=!!x.suspended;t.created=x.createdAt||x.created;t.notes=x.adminNote||''});
  S.inv=[];inv.forEach(d=>{const u=uidOf(d),x=d.data(),t=T(u),a=amt(x),c=idate(x);t.inv++;t.rev+=a;if(c){if(!t.last||c>t.last)t.last=c;if(!t.first||c<t.first)t.first=c;const dd=days(c);if(dd<7)t.week++;if(dd<30){t.month++;t.mrev+=a}}S.inv.push({u,id:d.id,a,c,client:x.clientName||x.customerName||x.client?.name||x.customer||'',no:x.invoiceNumber||x.number||d.id.slice(0,6),gst:!!(x.gst||x.gstin||x.cgst||x.igst)})});
@@ -144,7 +144,7 @@ async function inapp(uids,title,body,type='admin'){const ids=uids.slice();let n=
  await audit('notify',uids.length+' users',null,{title,body});return n}
 /* ---------- views ---------- */
 function render(){const m=$('#main');if(!S.loaded&&!['set','audit'].includes(S.tab)){m.innerHTML='<div class="sk"></div><div class="sk"></div>';return}
- const v={dash,users,act,prob,eng,store,rev,audit:auditV,set,exp,con,panic}[S.tab];m.innerHTML=(S.err&&S.tab==='dash'?`<div class="card" style="margin-bottom:12px;border-color:var(--wn)"><small>${S.fb?'<b>analytics/admin_config padh nahi paya — isAdmin() rules abhi live nahi hain.</b> ':''}Kuch queries fail hui (rules/index): ${e(S.err.slice(0,300))}</small></div>`:'')+(v?v():'');if(S.tab==='audit')loadAudit();window.after&&after()}
+ const v={dash,users,act,prob,eng,store,rev,audit:auditV,set,exp,con,panic}[S.tab];m.innerHTML=(S.err&&S.tab==='dash'?`<div class="card" style="margin-bottom:12px;border-color:var(--wn)"><small>${S.fb?'<b>analytics/admin_config padh nahi paya — isAdmin() rules abhi live nahi hain.</b> ':''}[${e(S.diag||'')}] Kuch queries fail hui (rules/index): ${e(S.err.slice(0,300))}</small></div>`:'')+(v?v():'');if(S.tab==='audit')loadAudit();window.after&&after()}
 const kpi=(l,v,s='')=>`<div class="card kpi"><span>${l}</span><b>${v}</b><small>${s}</small></div>`;
 function dash(){const a=A(),d1=a.filter(t=>days(t.last)<1).length,d7=a.filter(t=>days(t.last)<7).length,d30=a.filter(t=>days(t.last)<30).length;
  const tI=a.reduce((s,t)=>s+t.inv,0),tR=a.reduce((s,t)=>s+t.rev,0),att=a.filter(t=>issues(t).length).length;
