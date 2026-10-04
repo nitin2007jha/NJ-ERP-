@@ -65,7 +65,7 @@ pre{background:var(--pl);padding:12px;border-radius:12px;overflow:auto;font-size
 /* ============ CONFIG — apna Firebase config & admin emails yahan daalo ============ */
 const CFG={
  firebase:{apiKey:"AIzaSyCV3G-BMVf2QRpibaS5MnwQybKixC4h9og",authDomain:"dev-ayurveda.firebaseapp.com",databaseURL:"https://dev-ayurveda-default-rtdb.firebaseio.com",projectId:"dev-ayurveda",storageBucket:"dev-ayurveda.firebasestorage.app",messagingSenderId:"40760282698",appId:"1:40760282698:web:20e31100eed712631ca0b3",measurementId:"G-THLCJRV6MZ"},
- appId:"1:40760282698:web:20e31100eed712631ca0b3", // artifacts/{appId}/... — Firestore me `artifacts` ke andar jo doc id hai wahi daalo
+ appId:"dev-ayurveda-pro-auth", // artifacts/{appId}/... — Firestore me `artifacts` ke andar jo doc id hai wahi daalo
  fallbackAdmins:["njonlinebharat@gmail.com"], // sirf tab use hota hai jab analytics/admin_config padh na paye
  adminDoc:"analytics/admin_config",  // doc ke field `admins` (string, comma-separated emails) se admins; optional field `gods` se God Mode, na ho to sab admins god
  idleMin:15, godMin:30, inactiveDays:7, env:"PROD", pushUrl:"" // e.g. https://your-vercel.app/api/send-push
@@ -95,7 +95,7 @@ async function reauth(){const p=prompt('Password dobara daalo (re-auth)');if(!p)
 /* ---------- auth ---------- */
 async function doLogin(ev){ev.preventDefault();const a=+localStorage.lk||0;if(Date.now()<a)return $('#lerr').textContent='Zyada attempts. Thodi der baad try karo.',false;
 try{await auth.signInWithEmailAndPassword($('#em').value.trim(),$('#pw').value);localStorage.fails=0}catch(x){const f=(+localStorage.fails||0)+1;localStorage.fails=f;if(f>=5){localStorage.lk=Date.now()+3e5;localStorage.fails=0}$('#lerr').textContent='Login fail'}return false}
-async function loadAdmins(){let x={};try{x=(await db.doc(CFG.adminDoc).get()).data()||{}}catch(_){x={admins:CFG.fallbackAdmins}}const f=k=>[].concat(x[k]||[]).join(',').split(/[,;\s]+/).map(v=>v.trim().toLowerCase()).filter(Boolean);S.admins=f('admins');S.gods=f('gods').length?f('gods'):S.admins}
+async function loadAdmins(){let x={};try{x=(await db.doc(CFG.adminDoc).get()).data()||{}}catch(_){S.fb=1;x={admins:CFG.fallbackAdmins}}const f=k=>[].concat(x[k]||[]).join(',').split(/[,;\s]+/).map(v=>v.trim().toLowerCase()).filter(Boolean);S.admins=f('admins');S.gods=f('gods').length?f('gods'):S.admins}
 auth.onAuthStateChanged(async u=>{let ok=false;if(u&&!u.isAnonymous){try{await loadAdmins();ok=S.admins.includes((u.email||'').toLowerCase())}catch(x){$('#lerr').textContent='Admin config padh nahi paya: '+x.message;auth.signOut();return}}
  if(u&&!ok){auth.signOut();$('#lerr').textContent='Ye account admin nahi hai.';return}
  $('#login').style.display=ok?'none':'flex';$('#app').style.display=ok?'grid':'none';if(ok){$('#env').textContent=CFG.env;nav();go('dash');refresh()}});
@@ -142,7 +142,7 @@ async function inapp(uids,title,body,type='admin'){const ids=uids.slice();let n=
  await audit('notify',uids.length+' users',null,{title,body});return n}
 /* ---------- views ---------- */
 function render(){const m=$('#main');if(!S.loaded&&!['set','audit'].includes(S.tab)){m.innerHTML='<div class="sk"></div><div class="sk"></div>';return}
- const v={dash,users,act,prob,eng,store,rev,audit:auditV,set,exp,con,panic}[S.tab];m.innerHTML=(S.err&&S.tab==='dash'?`<div class="card" style="margin-bottom:12px;border-color:var(--wn)"><small>Kuch queries fail hui (rules/index): ${e(S.err.slice(0,300))}</small></div>`:'')+(v?v():'');if(S.tab==='audit')loadAudit();window.after&&after()}
+ const v={dash,users,act,prob,eng,store,rev,audit:auditV,set,exp,con,panic}[S.tab];m.innerHTML=(S.err&&S.tab==='dash'?`<div class="card" style="margin-bottom:12px;border-color:var(--wn)"><small>${S.fb?'<b>analytics/admin_config padh nahi paya — isAdmin() rules abhi live nahi hain.</b> ':''}Kuch queries fail hui (rules/index): ${e(S.err.slice(0,300))}</small></div>`:'')+(v?v():'');if(S.tab==='audit')loadAudit();window.after&&after()}
 const kpi=(l,v,s='')=>`<div class="card kpi"><span>${l}</span><b>${v}</b><small>${s}</small></div>`;
 function dash(){const a=A(),d1=a.filter(t=>days(t.last)<1).length,d7=a.filter(t=>days(t.last)<7).length,d30=a.filter(t=>days(t.last)<30).length;
  const tI=a.reduce((s,t)=>s+t.inv,0),tR=a.reduce((s,t)=>s+t.rev,0),att=a.filter(t=>issues(t).length).length;
