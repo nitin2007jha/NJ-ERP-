@@ -113,10 +113,12 @@ function more(){const m=modal('<div class="stack">'+tabs().slice(4).map(([k,n])=
 $('#logo').onclick=()=>{if((S.gods||[]).includes((auth.currentUser?.email||'').toLowerCase())){S.tap++;clearTimeout(S.tt);S.tt=setTimeout(()=>S.tap=0,2500);if(S.tap>=7){S.tap=0;godOn()}}};
 function go(t){S.tab=t;nav();$('#ttl').textContent=(tabs().find(x=>x[0]===t)||[0,''])[1];render()}
 /* ---------- data load ---------- */
-async function cg(name,lim=1500){try{const s=await db.collectionGroup(name).limit(lim).get();return s.docs.filter(d=>uidOf(d))}catch(x){console.warn(name,x.message);S.err=(S.err||'')+name+': '+x.message+' | ';return[]}}
+const W=p=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error('timeout 20s')),2e4))]);
+async function cg(name,lim=1500){try{const s=await W(db.collectionGroup(name).limit(lim).get());return s.docs.filter(d=>uidOf(d))}catch(x){console.warn(name,x.message);S.err=(S.err||'')+name+': '+x.message+' | ';return[]}}
 function T(u){return S.T[u]||(S.T[u]={uid:u,name:u.slice(0,8),email:'',phone:'',gst:'',inv:0,rev:0,last:null,first:null,cli:0,prod:0,stock:0,exp:0,emp:0,ord:0,pend:0,week:0,month:0,mrev:0})}
-async function refresh(f){if(!auth.currentUser)return;$('#main').innerHTML='<div class="sk"></div><div class="sk"></div><div class="sk"></div>';S.T={};S.err='';
- const [us,inv,cli,pr,ex,em,od]=await Promise.all([db.collection('artifacts').doc(CFG.appId).collection('users').limit(2000).get().catch(x=>{S.err+='users: '+x.message;return{docs:[]}}),cg('invoices'),cg('clients'),cg('products'),cg('expenses'),cg('employees'),cg('onlineOrders')]);
+async function refresh(f){try{await refresh0(f)}catch(x){console.error(x);$('#main').innerHTML='<div class="card"><b>Panel error:</b> '+e(x.message)+'<pre>'+e(x.stack||'')+'</pre></div>'}}
+async function refresh0(f){if(!auth.currentUser)return;$('#main').innerHTML='<div class="sk"></div><div class="sk"></div><div class="sk"></div>';S.T={};S.err='';
+ const [us,inv,cli,pr,ex,em,od]=await Promise.all([W(db.collection('artifacts').doc(CFG.appId).collection('users').limit(2000).get()).catch(x=>{S.err+='users: '+x.message;return{docs:[]}}),cg('invoices'),cg('clients'),cg('products'),cg('expenses'),cg('employees'),cg('onlineOrders')]);
  us.docs.forEach(d=>{const x=d.data(),t=T(d.id);t.name=x.businessName||x.business||x.name||x.companyName||t.name;t.email=x.email||'';t.phone=x.phone||x.mobile||'';t.gst=x.gstin||x.gst||'';t.plan=x.plan||'';t.susp=!!x.suspended;t.created=x.createdAt||x.created;t.notes=x.adminNote||''});
  S.inv=[];inv.forEach(d=>{const u=uidOf(d),x=d.data(),t=T(u),a=amt(x),c=idate(x);t.inv++;t.rev+=a;if(c){if(!t.last||c>t.last)t.last=c;if(!t.first||c<t.first)t.first=c;const dd=days(c);if(dd<7)t.week++;if(dd<30){t.month++;t.mrev+=a}}S.inv.push({u,id:d.id,a,c,client:x.clientName||x.customerName||x.client?.name||x.customer||'',no:x.invoiceNumber||x.number||d.id.slice(0,6),gst:!!(x.gst||x.gstin||x.cgst||x.igst)})});
  cli.forEach(d=>T(uidOf(d)).cli++);pr.forEach(d=>{const x=d.data(),t=T(uidOf(d));t.prod++;t.stock+=(+x.stock??+x.quantity??+x.qty??0)*(+x.purchasePrice||+x.costPrice||+x.price||0)});
