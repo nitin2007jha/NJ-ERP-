@@ -1,589 +1,231 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow">
-<title>My Business ERP — Admin Panel</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>My Business ERP · Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <style>
-  :root{ --op:#0f7a80; --op-dark:#0a5a60; --op-light:#e6f6f6; --navy:#0b1c26; --navy2:#122a36; }
-  *{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;}
-  body{background:#f1f5f4;}
-  ::-webkit-scrollbar{width:8px;height:8px;}
-  ::-webkit-scrollbar-thumb{background:#cbd5d1;border-radius:8px;}
-  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
-  .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;border:1px solid transparent;transition:.15s;}
-  .btn-primary{background:var(--op);color:#fff;} .btn-primary:hover{background:var(--op-dark);}
-  .btn-ghost{background:#fff;color:#334155;border-color:#e2e8f0;} .btn-ghost:hover{background:#f8fafc;}
-  .btn-danger{background:#fef2f2;color:#dc2626;border-color:#fecaca;} .btn-danger:hover{background:#fee2e2;}
-  .btn-warn{background:#fffbeb;color:#b45309;border-color:#fde68a;} .btn-warn:hover{background:#fef3c7;}
-  .card{background:#fff;border:1px solid #e5e9e8;border-radius:16px;}
-  .navitem{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;color:#b7c7cc;font-size:13.5px;font-weight:600;cursor:pointer;}
-  .navitem:hover{background:rgba(255,255,255,.06);color:#fff;}
-  .navitem.active{background:var(--op);color:#fff;}
-  table{width:100%;border-collapse:collapse;font-size:13px;}
-  th{text-align:left;padding:9px 12px;color:#64748b;font-weight:700;text-transform:uppercase;font-size:10.5px;letter-spacing:.03em;border-bottom:1px solid #e5e9e8;background:#fafcfb;}
-  td{padding:9px 12px;border-bottom:1px solid #f1f5f4;color:#334155;}
-  tr:hover td{background:#f8fafc;}
-  .modal-bg{position:fixed;inset:0;background:rgba(9,20,25,.55);z-index:200;display:none;align-items:center;justify-content:center;padding:16px;}
-  .modal-bg.open{display:flex;}
-  .modal{background:#fff;border-radius:16px;width:100%;max-width:720px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;}
-  .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:700;}
-  .toast-item{animation:slideIn .2s ease;}
-  @keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-  .tabbtn{padding:8px 14px;border-radius:9px;font-size:12.5px;font-weight:700;color:#64748b;cursor:pointer;}
-  .tabbtn.active{background:var(--op-light);color:var(--op-dark);}
-</style>
-</head>
-<body>
-
-<div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
-
-<!-- ═══════════════════ LOGIN SCREEN ═══════════════════ -->
-<div id="login-screen" class="min-h-screen flex items-center justify-center px-4" style="background:radial-gradient(circle at top,var(--navy2),var(--navy));">
-  <div class="w-full max-w-sm">
-    <div class="text-center mb-6">
-      <div class="w-14 h-14 bg-white/10 border border-white/15 rounded-2xl flex items-center justify-center mx-auto mb-3">
-        <i data-lucide="shield-check" class="w-7 h-7 text-emerald-400"></i>
-      </div>
-      <h1 class="text-2xl font-black text-white">Admin Panel</h1>
-      <p class="text-slate-400 text-sm mt-1">My Business ERP — restricted access</p>
-    </div>
-    <div class="card p-6" style="background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);">
-      <form id="login-form" class="space-y-3">
-        <div>
-          <label class="text-xs font-bold text-slate-300 mb-1 block">Admin Email</label>
-          <input id="admin-email" type="email" required autocomplete="username" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder:text-slate-500 text-sm outline-none focus:border-emerald-500" placeholder="you@example.com">
-        </div>
-        <div>
-          <label class="text-xs font-bold text-slate-300 mb-1 block">Password</label>
-          <input id="admin-password" type="password" required autocomplete="current-password" class="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/15 text-white placeholder:text-slate-500 text-sm outline-none focus:border-emerald-500">
-        </div>
-        <p id="login-error" class="text-red-400 text-xs hidden"></p>
-        <button type="submit" id="login-btn" class="btn btn-primary w-full justify-center py-2.5 text-sm">Sign In <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
-      </form>
-      <p class="text-slate-500 text-[11px] mt-4 leading-relaxed">Only pre-approved admin accounts can enter. This uses the same Firebase project as the main app — access is enforced both here and in Firestore Security Rules.</p>
-    </div>
-  </div>
-</div>
-
-<!-- ═══════════════════ ADMIN APP ═══════════════════ -->
-<div id="admin-app" class="hidden min-h-screen flex">
-
-  <!-- Sidebar -->
-  <div class="w-64 flex-shrink-0 flex flex-col" style="background:linear-gradient(180deg,var(--navy2),var(--navy));">
-    <div class="p-4 border-b border-white/10 flex items-center gap-2.5">
-      <div class="w-9 h-9 bg-emerald-500/20 border border-emerald-500/30 rounded-xl flex items-center justify-center"><i data-lucide="shield-check" class="w-5 h-5 text-emerald-400"></i></div>
-      <div><div class="text-white font-black text-sm leading-tight">Admin Panel</div><div class="text-slate-500 text-[10.5px]">My Business ERP</div></div>
-    </div>
-
-    <div class="p-3 space-y-1">
-      <div class="navitem active" data-nav="dashboard" onclick="Admin.showDashboard()"><i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard</div>
-      <div class="navitem" data-nav="explorer" onclick="Admin.showCustomExplorer()"><i data-lucide="database" class="w-4 h-4"></i> Custom Path Explorer</div>
-    </div>
-
-    <div class="px-4 pt-3 pb-1.5 flex items-center justify-between">
-      <div class="text-[10.5px] font-black text-slate-500 uppercase tracking-wider">Businesses</div>
-      <button onclick="Admin.loadBusinesses()" class="text-slate-500 hover:text-white" title="Refresh"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
-    </div>
-    <div class="px-3 pb-2">
-      <input id="biz-search" oninput="Admin.renderBusinessList()" placeholder="Search business..." class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-xs placeholder:text-slate-500 outline-none focus:border-emerald-500">
-    </div>
-    <div id="biz-list" class="flex-1 overflow-y-auto px-2 pb-3 space-y-1"></div>
-
-    <div class="p-3 border-t border-white/10">
-      <div class="text-slate-400 text-[11px] truncate mb-2" id="admin-whoami"></div>
-      <button onclick="Admin.signOutAdmin()" class="btn btn-ghost w-full justify-center py-2 text-xs" style="background:rgba(255,255,255,.06);color:#e2e8f0;border-color:rgba(255,255,255,.12);"><i data-lucide="log-out" class="w-3.5 h-3.5"></i> Sign Out</button>
-    </div>
-  </div>
-
-  <!-- Main content -->
-  <div class="flex-1 overflow-y-auto">
-    <div id="view-dashboard" class="p-6 max-w-6xl mx-auto">
-      <h2 class="text-xl font-black text-slate-800 mb-1">Dashboard</h2>
-      <p class="text-slate-500 text-sm mb-5">Overview across all registered businesses.</p>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div class="card p-4"><div class="text-2xl font-black text-slate-800" id="stat-biz-count">—</div><div class="text-xs text-slate-500 font-semibold mt-0.5">Total Businesses</div></div>
-        <div class="card p-4"><div class="text-2xl font-black text-slate-800" id="stat-disabled-count">—</div><div class="text-xs text-slate-500 font-semibold mt-0.5">Disabled Businesses</div></div>
-        <div class="card p-4"><div class="text-2xl font-black text-slate-800" id="stat-selected-emp-count">—</div><div class="text-xs text-slate-500 font-semibold mt-0.5">Employees (selected biz)</div></div>
-        <div class="card p-4"><div class="text-2xl font-black text-slate-800" id="stat-appid">—</div><div class="text-xs text-slate-500 font-semibold mt-0.5">Firestore App ID</div></div>
-      </div>
-      <div class="card p-4">
-        <div class="font-bold text-slate-700 text-sm mb-2 flex items-center gap-2"><i data-lucide="info" class="w-4 h-4 text-slate-400"></i> How to use this panel</div>
-        <ul class="text-xs text-slate-500 space-y-1.5 list-disc pl-4">
-          <li>Select a business from the left sidebar to view/edit its Settings, Employees, Invoices, Clients, Products and Expenses.</li>
-          <li>Every table row can be edited as raw JSON (full control) or deleted.</li>
-          <li>Use "Disable Business" on a business's Overview tab to instantly block that owner + all their employees from logging into the app — no need to touch Firebase Authentication.</li>
-          <li>"Custom Path Explorer" lets you browse any Firestore collection path directly, in case something isn't covered by the tabs above.</li>
-        </ul>
-      </div>
-    </div>
-
-    <div id="view-business" class="hidden p-6 max-w-6xl mx-auto">
-      <div class="flex items-center justify-between mb-4">
-        <div>
-          <div class="text-xs text-slate-400 font-semibold mb-0.5">Business</div>
-          <h2 class="text-xl font-black text-slate-800" id="biz-title">—</h2>
-          <div class="text-[11px] text-slate-400 mono" id="biz-uid-display">—</div>
-        </div>
-        <div id="biz-status-badge"></div>
-      </div>
-
-      <div class="flex gap-1.5 mb-4 flex-wrap border-b border-slate-200 pb-2">
-        <div class="tabbtn active" data-tab="overview" onclick="Admin.switchBizTab('overview')">Overview</div>
-        <div class="tabbtn" data-tab="employees" onclick="Admin.switchBizTab('employees')">Employees</div>
-        <div class="tabbtn" data-tab="invoices" onclick="Admin.switchBizTab('invoices')">Invoices</div>
-        <div class="tabbtn" data-tab="clients" onclick="Admin.switchBizTab('clients')">Clients</div>
-        <div class="tabbtn" data-tab="products" onclick="Admin.switchBizTab('products')">Products</div>
-        <div class="tabbtn" data-tab="expenses" onclick="Admin.switchBizTab('expenses')">Expenses</div>
-      </div>
-
-      <div id="biztab-overview" class="biztab"></div>
-      <div id="biztab-employees" class="biztab hidden"></div>
-      <div id="biztab-invoices" class="biztab hidden"></div>
-      <div id="biztab-clients" class="biztab hidden"></div>
-      <div id="biztab-products" class="biztab hidden"></div>
-      <div id="biztab-expenses" class="biztab hidden"></div>
-    </div>
-
-    <div id="view-explorer" class="hidden p-6 max-w-6xl mx-auto">
-      <h2 class="text-xl font-black text-slate-800 mb-1">Custom Path Explorer</h2>
-      <p class="text-slate-500 text-sm mb-4">Browse any Firestore <strong>collection</strong> path directly. Example: <span class="mono bg-slate-100 px-1.5 py-0.5 rounded">artifacts/APP_ID/users/UID/invoices</span></p>
-      <div class="card p-4 mb-4">
-        <div class="flex gap-2">
-          <input id="explorer-path" class="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-sm mono outline-none focus:border-emerald-500" placeholder="artifacts/APP_ID/users/UID/collectionName">
-          <button onclick="Admin.exploreCustomPath()" class="btn btn-primary"><i data-lucide="search" class="w-4 h-4"></i> Browse</button>
-        </div>
-      </div>
-      <div id="explorer-results"></div>
-    </div>
-  </div>
-</div>
-
-<!-- JSON Editor Modal -->
-<div id="json-modal-bg" class="modal-bg">
-  <div class="modal">
-    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-      <div><div class="font-bold text-slate-800 text-sm" id="json-modal-title">Edit Document</div><div class="text-[11px] text-slate-400 mono" id="json-modal-path"></div></div>
-      <button onclick="Admin.closeJsonModal()" class="text-slate-400 hover:text-slate-700"><i data-lucide="x" class="w-5 h-5"></i></button>
-    </div>
-    <div class="p-4 flex-1 overflow-y-auto">
-      <p class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">⚠️ Saving here <strong>completely replaces</strong> this document with the JSON below. Keep the structure valid.</p>
-      <textarea id="json-modal-textarea" class="w-full h-80 mono text-xs p-3 rounded-xl border border-slate-200 outline-none focus:border-emerald-500" spellcheck="false"></textarea>
-      <p id="json-modal-error" class="text-red-500 text-xs mt-2 hidden"></p>
-    </div>
-    <div class="p-4 border-t border-slate-100 flex items-center justify-between gap-2">
-      <button onclick="Admin.deleteFromModal()" id="json-modal-delete-btn" class="btn btn-danger"><i data-lucide="trash-2" class="w-4 h-4"></i> Delete Document</button>
-      <div class="flex gap-2">
-        <button onclick="Admin.closeJsonModal()" class="btn btn-ghost">Cancel</button>
-        <button onclick="Admin.saveFromModal()" class="btn btn-primary"><i data-lucide="save" class="w-4 h-4"></i> Save</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, deleteDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-// ═══════════════════════════════════════════════════════════════════════════
-// CONFIG — must match the main app's Firebase project exactly.
-// ═══════════════════════════════════════════════════════════════════════════
-const firebaseConfig = { apiKey: "AIzaSyCV3G-BMVf2QRpibaS5MnwQybKixC4h9og", authDomain: "dev-ayurveda.firebaseapp.com", projectId: "dev-ayurveda", storageBucket: "dev-ayurveda.firebasestorage.app", messagingSenderId: "40760282698", appId: "1:40760282698:web:20e31100eed712631ca0b3" };
-const APP_ID = 'dev-ayurveda-pro-auth'; // same appId path segment used throughout the main app's Firestore paths
-
-// ⚠️ IMPORTANT: add the email(s) that are allowed to use this panel.
-// This is a convenience check only — the REAL gate is Firestore Security Rules
-// (see the rules snippet provided separately). Without matching rules, anyone
-// could still bypass this file and query Firestore directly.
-const ADMIN_EMAILS = [
-  // "owner@example.com",
-];
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-let currentUser = null;
-let currentBizUid = null;
-let currentBizName = null;
-let bizDirectory = [];
-let jsonModalCtx = null; // { path: [...segments] }
-let docRegistry = new Map();
-let docRegistryCounter = 0;
-function registerDoc(pathSegs, data, label){
-  const key = 'd' + (docRegistryCounter++);
-  docRegistry.set(key, { pathSegs, data, label });
-  return key;
+:root{--p:#0f7a80;--pd:#0b6377;--pl:#e7f4f6;--bg:#f4f7f8;--card:#fff;--tx:#0f1f23;--mu:#64757a;--bd:#e1e8ea;--ok:#16a34a;--wn:#d97706;--er:#dc2626;--ac:var(--p)}
+@media(prefers-color-scheme:dark){:root:not([data-t=light]){--bg:#0b1315;--card:#121d20;--tx:#e8f1f2;--mu:#8aa0a5;--bd:#22343a;--pl:#12303a}}
+:root[data-t=dark]{--bg:#0b1315;--card:#121d20;--tx:#e8f1f2;--mu:#8aa0a5;--bd:#22343a;--pl:#12303a}
+body.god{--ac:#d4a017;--pl:#2a2208}
+*{box-sizing:border-box;margin:0}html,body{height:100%}
+body{font:14px Figtree,system-ui,sans-serif;background:var(--bg);color:var(--tx);padding-top:env(safe-area-inset-top)}
+h1,h2,h3,.hd{font-family:'Bricolage Grotesque',sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+.btn{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid var(--bd);background:var(--card);cursor:pointer;transition:.2s}
+.btn.pr{background:var(--ac);border-color:var(--ac);color:#fff}.btn.dg{background:var(--er);border-color:var(--er);color:#fff}.btn.sm{min-height:36px;padding:0 12px;font-size:13px;border-radius:8px}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+input,select,textarea{width:100%;min-height:44px;padding:8px 12px;border:1px solid var(--bd);border-radius:12px;background:var(--card)}
+textarea{min-height:90px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.kpi b{display:block;font:700 24px 'Bricolage Grotesque';margin-top:4px}.kpi span{color:var(--mu);font-size:12px}
+#app{display:none;height:100%;grid-template-columns:220px 1fr}
+#side{background:var(--card);border-right:1px solid var(--bd);padding:16px 12px;overflow:auto}
+#side .nv{display:flex;gap:10px;align-items:center;width:100%;min-height:44px;padding:0 12px;border:0;background:none;border-radius:12px;cursor:pointer;text-align:left;color:var(--mu)}
+#side .nv.on{background:var(--pl);color:var(--ac);font-weight:600}
+#top{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--bd);background:var(--card);position:sticky;top:0;z-index:5}
+#main{padding:16px;overflow:auto;height:calc(100% - 65px);padding-bottom:90px}
+.chip{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;background:var(--pl);color:var(--ac);white-space:nowrap}
+.chip.ok{background:#dcfce7;color:#166534}.chip.wn{background:#fef3c7;color:#92400e}.chip.er{background:#fee2e2;color:#991b1b}
+.row{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--bd);cursor:pointer}.row:last-child{border:0}
+.row .g{flex:1;min-width:0}.row .g b,.row .g small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}small{color:var(--mu)}
+.seg{display:inline-flex;background:var(--pl);border-radius:12px;padding:4px;gap:2px;flex-wrap:wrap}.seg button{border:0;background:none;padding:8px 12px;border-radius:9px;cursor:pointer;min-height:36px}.seg .on{background:var(--ac);color:#fff}
+.mod{position:fixed;inset:0;background:#0008;z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.mod>div{background:var(--bg);width:100%;max-width:720px;max-height:92%;overflow:auto;border-radius:24px 24px 0 0;padding:20px;animation:up .25s}
+@media(min-width:800px){.mod{align-items:center}.mod>div{border-radius:24px}}
+@keyframes up{from{transform:translateY(30px);opacity:0}}
+#bn{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom);z-index:20;justify-content:space-around}
+#bn button{flex:1;min-height:56px;border:0;background:none;color:var(--mu);font-size:11px;cursor:pointer}#bn .on{color:var(--ac)}
+@media(max-width:800px){#app{grid-template-columns:1fr}#side{display:none}#bn{display:flex}}
+.sk{height:60px;border-radius:12px;background:linear-gradient(90deg,var(--bd),var(--pl),var(--bd));background-size:200%;animation:sh 1.2s infinite;margin-bottom:8px}@keyframes sh{to{background-position:-200%}}
+#toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:#111;color:#fff;padding:12px 18px;border-radius:12px;z-index:99;display:none}
+#login{display:flex;min-height:100%;align-items:center;justify-content:center;padding:20px}
+pre{background:var(--pl);padding:12px;border-radius:12px;overflow:auto;font-size:12px;white-space:pre-wrap}
+#godbar{display:none;background:#111;color:#d4a017;text-align:center;padding:6px;font-size:12px}
+.bar{display:flex;align-items:flex-end;gap:3px;height:80px}.bar i{flex:1;background:var(--ac);border-radius:3px 3px 0 0;min-height:2px}
+.stack>*+*{margin-top:12px}.fl{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body>
+<div id="login"><form class="card stack" style="width:100%;max-width:380px" onsubmit="return doLogin(event)">
+<h1 class="hd" id="logo0" style="font-size:24px;color:var(--p)">Command Center</h1><small>Sirf authorised admin login kar sakte hain.</small>
+<input id="em" type="email" placeholder="Admin email" autocomplete="username" required>
+<input id="pw" type="password" placeholder="Password" autocomplete="current-password" required>
+<button class="btn pr" style="width:100%">Sign in</button><small id="lerr" style="color:var(--er)"></small></form></div>
+<div id="app">
+<aside id="side"><h2 id="logo" class="hd" style="padding:8px 12px 16px;color:var(--ac);cursor:pointer;user-select:none">Command Center</h2><nav id="nav"></nav></aside>
+<section style="min-width:0;height:100%"><div id="godbar"></div>
+<div id="top"><b class="hd" id="ttl" style="flex:1"></b><span id="env" class="chip"></span><button class="btn sm" onclick="refresh(true)">Refresh</button><button class="btn sm" onclick="theme()">Theme</button><button class="btn sm" onclick="out()">Sign out</button></div>
+<div id="main"></div></section></div>
+<nav id="bn"></nav><div id="toast"></div><div id="mods"></div>
+<script>
+/* ============ CONFIG — apna Firebase config & admin emails yahan daalo ============ */
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCV3G-BMVf2QRpibaS5MnwQybKixC4h9og",
+  authDomain: "dev-ayurveda.firebaseapp.com",
+  databaseURL: "https://dev-ayurveda-default-rtdb.firebaseio.com",
+  projectId: "dev-ayurveda",
+  storageBucket: "dev-ayurveda.firebasestorage.app",
+  messagingSenderId: "40760282698",
+  appId: "1:40760282698:web:20e31100eed712631ca0b3",
+  measurementId: "G-THLCJRV6MZ"
+};,
+ appId:"1:40760282698:web:20e31100eed712631ca0b3",            // artifacts/{appId}/...
+ admins:["njonlinebharat@gmail.com"],        // sirf ye emails login kar sakte hain
+ gods:["njonlinebharat@gmail.com"],          // inme se hi God Mode unlock hoga (admins ka subset)
+ idleMin:15, godMin:30, inactiveDays:7, env:"PROD", pushUrl:"" // e.g. https://your-vercel.app/api/send-push
+};
+/* ================================================================================== */
+firebase.initializeApp(CFG.firebase);const auth=firebase.auth(),db=firebase.firestore();
+const $=s=>document.querySelector(s),e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const R=()=>db.collection('artifacts').doc(CFG.appId),U=u=>R().collection('users').doc(u);
+const S={tab:'dash',T:{},inv:[],ord:[],loaded:false,god:false,godUntil:0,idle:0,seg:'all',q:'',sort:'rev',tap:0};
+const inr=n=>'₹'+Math.round(n||0).toLocaleString('en-IN');
+const dt=d=>{try{d=d?.toDate?d.toDate():d?new Date(d):null;return d&&!isNaN(d)?d:null}catch(_){return null}};
+const ago=d=>{d=dt(d);if(!d)return 'never';const x=(Date.now()-d)/864e5;return x<1?'today':x<2?'yesterday':Math.floor(x)+'d ago'};
+const days=d=>{d=dt(d);return d?(Date.now()-d)/864e5:9999};
+const amt=d=>+(d.grandTotal??d.total??d.netPayable??d.amount??0)||0;
+const idate=d=>dt(d.createdAt??d.date??d.invoiceDate);
+const uidOf=x=>{const m=x.ref.path.match(/users\/([^/]+)\//);return m&&x.ref.path.startsWith('artifacts/'+CFG.appId+'/')?m[1]:null};
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';navigator.vibrate&&navigator.vibrate(15);clearTimeout(t._);t._=setTimeout(()=>t.style.display='none',2600)}
+function theme(){const r=document.documentElement;r.dataset.t=r.dataset.t==='dark'?'light':'dark'}
+/* ---------- audit ---------- */
+async function audit(action,target,before,after,reason){try{await R().collection('adminAudit').add({actor:auth.currentUser.uid,email:auth.currentUser.email,action,target:target||'',before:JSON.stringify(before??null).slice(0,1500),after:JSON.stringify(after??null).slice(0,1500),reason:reason||'',god:S.god,ua:navigator.userAgent,ts:firebase.firestore.FieldValue.serverTimestamp()})}catch(x){console.warn('audit',x)}}
+/* ---------- modal & confirm ---------- */
+function modal(h){const m=document.createElement('div');m.className='mod';m.innerHTML='<div>'+h+'</div>';m.onclick=ev=>{if(ev.target===m)m.remove()};$('#mods').appendChild(m);return m}
+function closeM(){const a=[...document.querySelectorAll('.mod')];a.pop()?.remove()}
+function ask(title,word,needReason=true){return new Promise(res=>{const m=modal(`<h3 class="hd">${e(title)}</h3><div class="stack" style="margin-top:12px">${word?`<small>Confirm karne ke liye type karo: <b>${e(word)}</b></small><input id="cw">`:''}${needReason?'<input id="cr" placeholder="Reason (mandatory)">':''}<div class="fl"><button class="btn" id="cn">Cancel</button><button class="btn dg" id="cy">Confirm</button></div></div>`);
+m.querySelector('#cn').onclick=()=>{m.remove();res(null)};m.querySelector('#cy').onclick=()=>{const w=m.querySelector('#cw')?.value,r=m.querySelector('#cr')?.value.trim();if(word&&w!==word)return toast('Confirmation text galat hai');if(needReason&&!r)return toast('Reason likhna zaroori hai');m.remove();res({reason:r||''})}})}
+async function reauth(){const p=prompt('Password dobara daalo (re-auth)');if(!p)return false;try{await auth.currentUser.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(auth.currentUser.email,p));return true}catch(_){toast('Re-auth fail');return false}}
+/* ---------- auth ---------- */
+async function doLogin(ev){ev.preventDefault();const a=+localStorage.lk||0;if(Date.now()<a)return $('#lerr').textContent='Zyada attempts. Thodi der baad try karo.',false;
+try{await auth.signInWithEmailAndPassword($('#em').value.trim(),$('#pw').value);localStorage.fails=0}catch(x){const f=(+localStorage.fails||0)+1;localStorage.fails=f;if(f>=5){localStorage.lk=Date.now()+3e5;localStorage.fails=0}$('#lerr').textContent='Login fail'}return false}
+auth.onAuthStateChanged(u=>{const ok=u&&!u.isAnonymous&&CFG.admins.map(x=>x.toLowerCase()).includes((u.email||'').toLowerCase());
+ if(u&&!ok){auth.signOut();$('#lerr').textContent='Ye account admin nahi hai.';return}
+ $('#login').style.display=ok?'none':'flex';$('#app').style.display=ok?'grid':'none';if(ok){$('#env').textContent=CFG.env;nav();go('dash');refresh()}});
+function out(){S.god=false;document.body.classList.remove('god');auth.signOut()}
+['click','keydown','touchstart'].forEach(v=>addEventListener(v,()=>S.idle=Date.now()));
+setInterval(()=>{if(!auth.currentUser)return;if(Date.now()-S.idle>CFG.idleMin*6e4&&S.idle){toast('Idle timeout');out()}
+ if(S.god){const l=S.godUntil-Date.now();if(l<=0)godOff();else $('#godbar').textContent='GOD MODE ACTIVE · '+Math.floor(l/6e4)+'m '+Math.floor(l/1e3%60)+'s left'}},1000);
+/* ---------- nav ---------- */
+const TABS=[['dash','Dashboard'],['users','Users'],['act','Activity'],['prob','Problems'],['eng','Engage'],['store','Store'],['rev','Revenue'],['audit','Audit'],['set','Settings']];
+const GODT=[['exp','Data Explorer'],['con','Console'],['panic','Panic']];
+function tabs(){return TABS.concat(S.god?GODT:[])}
+function nav(){const t=tabs();$('#nav').innerHTML=t.map(([k,n])=>`<button class="nv ${S.tab===k?'on':''}" onclick="go('${k}')">${n}</button>`).join('');
+ const b=t.slice(0,4).concat([['more','More']]);$('#bn').innerHTML=b.map(([k,n])=>`<button class="${S.tab===k?'on':''}" onclick="${k==='more'?'more()':`go('${k}')`}">${n}</button>`).join('')}
+function more(){const m=modal('<div class="stack">'+tabs().slice(4).map(([k,n])=>`<button class="btn" style="width:100%" onclick="closeM();go('${k}')">${n}</button>`).join('')+'</div>')}
+$('#logo').onclick=()=>{if(CFG.gods.includes((auth.currentUser?.email||'').toLowerCase())){S.tap++;clearTimeout(S.tt);S.tt=setTimeout(()=>S.tap=0,2500);if(S.tap>=7){S.tap=0;godOn()}}};
+function go(t){S.tab=t;nav();$('#ttl').textContent=(tabs().find(x=>x[0]===t)||[0,''])[1];render()}
+/* ---------- data load ---------- */
+async function cg(name,lim=1500){try{const s=await db.collectionGroup(name).limit(lim).get();return s.docs.filter(d=>uidOf(d))}catch(x){console.warn(name,x.message);S.err=(S.err||'')+name+': '+x.message+' | ';return[]}}
+function T(u){return S.T[u]||(S.T[u]={uid:u,name:u.slice(0,8),email:'',phone:'',gst:'',inv:0,rev:0,last:null,first:null,cli:0,prod:0,stock:0,exp:0,emp:0,ord:0,pend:0,week:0,month:0,mrev:0})}
+async function refresh(f){if(!auth.currentUser)return;$('#main').innerHTML='<div class="sk"></div><div class="sk"></div><div class="sk"></div>';S.T={};S.err='';
+ const [us,inv,cli,pr,ex,em,od]=await Promise.all([db.collection('artifacts').doc(CFG.appId).collection('users').limit(2000).get().catch(x=>{S.err+='users: '+x.message;return{docs:[]}}),cg('invoices'),cg('clients'),cg('products'),cg('expenses'),cg('employees'),cg('onlineOrders')]);
+ us.docs.forEach(d=>{const x=d.data(),t=T(d.id);t.name=x.businessName||x.business||x.name||x.companyName||t.name;t.email=x.email||'';t.phone=x.phone||x.mobile||'';t.gst=x.gstin||x.gst||'';t.plan=x.plan||'';t.susp=!!x.suspended;t.created=x.createdAt||x.created;t.notes=x.adminNote||''});
+ S.inv=[];inv.forEach(d=>{const u=uidOf(d),x=d.data(),t=T(u),a=amt(x),c=idate(x);t.inv++;t.rev+=a;if(c){if(!t.last||c>t.last)t.last=c;if(!t.first||c<t.first)t.first=c;const dd=days(c);if(dd<7)t.week++;if(dd<30){t.month++;t.mrev+=a}}S.inv.push({u,id:d.id,a,c,client:x.clientName||x.customerName||x.client?.name||x.customer||'',no:x.invoiceNumber||x.number||d.id.slice(0,6),gst:!!(x.gst||x.gstin||x.cgst||x.igst)})});
+ cli.forEach(d=>T(uidOf(d)).cli++);pr.forEach(d=>{const x=d.data(),t=T(uidOf(d));t.prod++;t.stock+=(+x.stock??+x.quantity??+x.qty??0)*(+x.purchasePrice||+x.costPrice||+x.price||0)});
+ ex.forEach(d=>T(uidOf(d)).exp++);em.forEach(d=>T(uidOf(d)).emp++);S.ord=[];od.forEach(d=>{const x=d.data(),t=T(uidOf(d));t.ord++;const p=['pending','new','placed'].includes(String(x.status||'pending').toLowerCase());if(p)t.pend++;S.ord.push({u:uidOf(d),a:amt(x),p,c:dt(x.createdAt),n:x.customerName||x.name||''})});
+ Object.values(S.T).forEach(t=>{t.health=score(t);t.first=t.first||dt(t.created)});S.loaded=true;render()}
+function score(t){let s=0;if(t.inv)s+=25;if(t.week)s+=25;else if(t.month)s+=12;if(t.prod)s+=15;if(t.cli)s+=15;if(days(t.last)<CFG.inactiveDays)s+=20;return Math.min(100,s)}
+const A=()=>Object.values(S.T);
+function issues(t){const r=[];const age=days(t.first);if(!t.prod)r.push(['no_prod','Ek bhi product add nahi kiya']);if(!t.cli)r.push(['no_cli','Koi client add nahi']);if(!t.inv)r.push(['no_inv',age>2?'Signup ke baad ek bhi invoice nahi':'Abhi tak invoice nahi']);else if(days(t.last)>=CFG.inactiveDays)r.push(['inactive','Invoice bnana band ('+ago(t.last)+')']);if(t.pend)r.push(['pend',t.pend+' web order pending'])
+ return r}
+/* ---------- templates ---------- */
+const TPL={
+ no_inv:['Pehla invoice','Namaste {name} ji 🙏 My Business ERP me aapka account ready hai. Sirf 1 minute me pehla invoice bnaiye — Invoices tab > New. Koi dikkat ho to reply kijiye, hum help karenge.'],
+ no_prod:['Product add','{name} ji, apne products/services add kar lijiye — fir invoice banana 10 second ka kaam hai. Inventory tab > Add Product. Help chahiye to batao 😊'],
+ no_cli:['Client add','{name} ji, apne customers ko Clients me add kijiye — unka baki hisaab, GST aur WhatsApp reminder automatic ho jayega.'],
+ inactive:['Wapas aaiye','{name} ji, kaafi din se aap app par nahi aaye. Aapke business ka hisaab update rakhne ke liye aaj ek baar login kijiye. Kuch nayi features bhi aayi hain!'],
+ pend:['Pending orders','{name} ji, aapke online store par pending orders hain. App kholkar unhe confirm kijiye — customer intezaar kar raha hai.'],
+ tip:['GST tip','{name} ji, kya aapne CA Portal try kiya? CA ko link bhejiye, wo apne aap aapka GST data dekh lega. Settings > CA Portal.'],
+ thanks:['Thanks','{name} ji, My Business ERP use karne ke liye shukriya! Koi suggestion ho to batayein, hum aapke liye behtar bana rahe hain.']};
+const fill=(s,t)=>s.replace(/{name}/g,t.name||'');
+function wa(t,msg){const p=String(t.phone||'').replace(/\D/g,'');if(!p)return toast('Phone number nahi hai');open('https://wa.me/'+(p.length===10?'91'+p:p)+'?text='+encodeURIComponent(msg),'_blank','noopener')}
+async function inapp(uids,title,body,type='admin'){const ids=uids.slice();let n=0;while(ids.length){const b=db.batch();ids.splice(0,400).forEach(u=>{b.set(U(u).collection('notifications').doc(),{title,body,type,from:'admin',read:false,createdAt:firebase.firestore.FieldValue.serverTimestamp()});n++});await b.commit()}
+ if(CFG.pushUrl)uids.forEach(u=>fetch(CFG.pushUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:u,title,body})}).catch(()=>{}));
+ await audit('notify',uids.length+' users',null,{title,body});return n}
+/* ---------- views ---------- */
+function render(){const m=$('#main');if(!S.loaded&&!['set','audit'].includes(S.tab)){m.innerHTML='<div class="sk"></div><div class="sk"></div>';return}
+ const v={dash,users,act,prob,eng,store,rev,audit:auditV,set,exp,con,panic}[S.tab];m.innerHTML=(S.err&&S.tab==='dash'?`<div class="card" style="margin-bottom:12px;border-color:var(--wn)"><small>Kuch queries fail hui (rules/index): ${e(S.err.slice(0,300))}</small></div>`:'')+(v?v():'');if(S.tab==='audit')loadAudit();window.after&&after()}
+const kpi=(l,v,s='')=>`<div class="card kpi"><span>${l}</span><b>${v}</b><small>${s}</small></div>`;
+function dash(){const a=A(),d1=a.filter(t=>days(t.last)<1).length,d7=a.filter(t=>days(t.last)<7).length,d30=a.filter(t=>days(t.last)<30).length;
+ const tI=a.reduce((s,t)=>s+t.inv,0),tR=a.reduce((s,t)=>s+t.rev,0),att=a.filter(t=>issues(t).length).length;
+ const day=[...Array(14)].map((_,i)=>S.inv.filter(x=>x.c&&Math.floor(days(x.c))===13-i).length),mx=Math.max(1,...day);
+ return `<div class="grid">${kpi('Total users',a.length)}${kpi('Active today',d1,'7d: '+d7+' · 30d: '+d30)}${kpi('Invoices (total)',tI,'Last 7d: '+S.inv.filter(x=>days(x.c)<7).length)}${kpi('GMV invoiced',inr(tR))}${kpi('Never invoiced',a.filter(t=>!t.inv).length)}${kpi('Need attention',att)}${kpi('Web orders',S.ord.length,S.ord.filter(o=>o.p).length+' pending')}${kpi('Stock value',inr(a.reduce((s,t)=>s+t.stock,0)))}</div>
+ <div class="card" style="margin-top:12px"><b>Invoices — last 14 days</b><div class="bar" style="margin-top:12px">${day.map(v=>`<i title="${v}" style="height:${v/mx*100}%"></i>`).join('')}</div></div>
+ <div class="card" style="margin-top:12px"><b>Top users (revenue)</b>${a.sort((x,y)=>y.rev-x.rev).slice(0,5).map(urow).join('')||'<small>Abhi data nahi</small>'}</div>
+ <div class="card" style="margin-top:12px"><b>Sabse zyada madad chahiye</b>${a.filter(t=>issues(t).length).sort((x,y)=>x.health-y.health).slice(0,5).map(urow).join('')||'<small>Sab theek hai 🎉</small>'}</div>`}
+const urow=t=>`<div class="row" onclick="t360('${e(t.uid)}')"><div class="g"><b>${e(t.name)}</b><small>${t.inv} invoices · ${inr(t.rev)} · ${ago(t.last)}</small></div><span class="chip ${t.health>66?'ok':t.health>33?'wn':'er'}">${t.health}</span></div>`;
+function users(){let a=A();const q=S.q.toLowerCase();if(q)a=a.filter(t=>[t.name,t.email,t.phone,t.gst,t.uid].join(' ').toLowerCase().includes(q));
+ a=a.sort((x,y)=>S.sort==='rev'?y.rev-x.rev:S.sort==='inv'?y.inv-x.inv:S.sort==='act'?days(x.last)-days(y.last):x.health-y.health);
+ return `<div class="stack"><input placeholder="Search name, phone, GSTIN, email, uid" value="${e(S.q)}" oninput="S.q=this.value;clearTimeout(S._d);S._d=setTimeout(render,250)"><div class="seg">${[['rev','Revenue'],['inv','Invoices'],['act','Recent'],['hl','Weakest']].map(([k,n])=>`<button class="${S.sort===k?'on':''}" onclick="S.sort='${k}';render()">${n}</button>`).join('')}</div>
+ <div class="card">${a.slice(0,200).map(t=>`<div class="row" onclick="t360('${e(t.uid)}')"><div class="g"><b>${e(t.name)} ${t.susp?'<span class="chip er">suspended</span>':''}</b><small>${e(t.phone||t.email||t.uid)} · ${t.inv} inv · ${t.prod} prod · ${t.cli} cli · stock ${inr(t.stock)}</small></div><div style="text-align:right"><b>${inr(t.rev)}</b><br><small>${ago(t.last)}</small></div></div>`).join('')||'<small>Koi user nahi mila</small>'}</div><small>${a.length} users</small></div>`}
+function act(){const l=S.inv.slice().sort((a,b)=>(b.c||0)-(a.c||0)).slice(0,60);return `<div class="card"><b>Live invoice feed</b>${l.map(x=>`<div class="row" onclick="t360('${e(x.u)}')"><div class="g"><b>${e(T(x.u).name)} → ${e(x.client||'Walk-in')}</b><small>#${e(x.no)} · ${ago(x.c)}${x.gst?' · GST':''}</small></div><b>${inr(x.a)}</b></div>`).join('')||'<small>No activity</small>'}</div>`}
+function prob(){const rows=[];A().forEach(t=>issues(t).forEach(i=>rows.push([t,i])));const g={};rows.forEach(([t,i])=>(g[i[0]]=g[i[0]]||[]).push(t));
+ return `<div class="stack">`+Object.entries(g).map(([k,ts])=>`<div class="card"><div class="fl" style="justify-content:space-between"><b>${e(TPL[k][0])} · ${ts.length} users</b><button class="btn sm pr" onclick="bulk('${k}')">In-app nudge sabko</button></div>${ts.slice(0,30).map(t=>`<div class="row"><div class="g" onclick="t360('${e(t.uid)}')"><b>${e(t.name)}</b><small>${e(issues(t).find(i=>i[0]===k)[1])}</small></div><button class="btn sm" onclick="wa(S.T['${e(t.uid)}'],fill(TPL.${k}[1],S.T['${e(t.uid)}']))">WhatsApp</button></div>`).join('')}</div>`).join('')+(rows.length?'':'<div class="card">Koi problem detect nahi hui 🎉</div>')+'</div>'}
+async function bulk(k){const us=A().filter(t=>issues(t).some(i=>i[0]===k));const r=await ask(us.length+' users ko in-app message bhejna hai','SEND');if(!r)return;await inapp(us.map(t=>t.uid),TPL[k][0],TPL[k][1].replace('{name} ji, ','').replace(/{name} ji /,''),'nudge');toast('Bhej diya: '+us.length)}
+const SEGS={all:['Sab',t=>1],inactive:['Inactive',t=>days(t.last)>=CFG.inactiveDays],noinv:['No invoice',t=>!t.inv],noprod:['No product',t=>!t.prod],power:['Power users',t=>t.week>=5],pend:['Pending orders',t=>t.pend>0]};
+function eng(){const c=A().filter(SEGS[S.seg][1]);return `<div class="stack"><div class="card stack"><b>Message banao</b><div class="seg">${Object.entries(SEGS).map(([k,v])=>`<button class="${S.seg===k?'on':''}" onclick="S.seg='${k}';render()">${v[0]} (${A().filter(v[1]).length})</button>`).join('')}</div>
+ <select id="tp" onchange="tfill()"><option value="">Template chuno…</option>${Object.entries(TPL).map(([k,v])=>`<option value="${k}">${e(v[0])}</option>`).join('')}</select><input id="mt" placeholder="Title"><textarea id="mb" placeholder="Message… {name} = business name"></textarea>
+ <div class="fl"><button class="btn pr" onclick="sendSeg()">In-app + push bhejo (${c.length})</button></div></div>
+ <div class="card"><b>WhatsApp (ek-ek karke)</b>${c.slice(0,40).map(t=>`<div class="row"><div class="g"><b>${e(t.name)}</b><small>${e(t.phone||'no phone')}</small></div><button class="btn sm" onclick="wa(S.T['${e(t.uid)}'],fill($('#mb').value,S.T['${e(t.uid)}']))">Send</button></div>`).join('')||'<small>Is segment me koi nahi</small>'}</div></div>`}
+function tfill(){const k=$('#tp').value;if(!k)return;$('#mt').value=TPL[k][0];$('#mb').value=TPL[k][1]}
+async function sendSeg(){const c=A().filter(SEGS[S.seg][1]),b=$('#mb').value.trim(),t=$('#mt').value.trim();if(!b||!t)return toast('Title aur message likho');const r=await ask(c.length+' users ko bhejna hai','SEND');if(!r)return;await Promise.all([]);for(const x of c){}await inapp(c.map(x=>x.uid),t,b.replace(/{name}/g,'').replace(/\s+ji,?\s*/,' '),'broadcast');toast('Sent to '+c.length)}
+function store(){const a=A().filter(t=>t.ord||0);return `<div class="grid">${kpi('Total orders',S.ord.length)}${kpi('Pending',S.ord.filter(o=>o.p).length)}${kpi('Order value',inr(S.ord.reduce((s,o)=>s+o.a,0)))}${kpi('Stores w/ orders',a.length)}</div><div class="card" style="margin-top:12px"><b>Store activity</b>${a.sort((x,y)=>y.ord-x.ord).map(t=>`<div class="row" onclick="t360('${e(t.uid)}')"><div class="g"><b>${e(t.name)}</b><small>${t.ord} orders · ${t.pend} pending</small></div>${t.pend?'<span class="chip wn">pending</span>':''}</div>`).join('')||'<small>Koi web order nahi</small>'}</div>`}
+function rev(){const a=A().sort((x,y)=>y.mrev-x.mrev);return `<div class="grid">${kpi('30d GMV',inr(a.reduce((s,t)=>s+t.mrev,0)))}${kpi('All-time GMV',inr(a.reduce((s,t)=>s+t.rev,0)))}${kpi('Avg / user',inr(a.length?a.reduce((s,t)=>s+t.rev,0)/a.length:0))}</div><div class="card" style="margin-top:12px"><b>Last 30 days by user</b>${a.slice(0,30).map(t=>`<div class="row" onclick="t360('${e(t.uid)}')"><div class="g"><b>${e(t.name)}</b><small>${t.month} invoices</small></div><b>${inr(t.mrev)}</b></div>`).join('')}</div><small>Subscription/Stripe data ke liye Cloud Function chahiye (is file me nahi).</small>`}
+function auditV(){return '<div class="card"><b>Admin audit log</b><div id="al"><div class="sk"></div></div><button class="btn sm" style="margin-top:8px" onclick="csv()">CSV export</button></div>'}
+async function loadAudit(){try{const s=await R().collection('adminAudit').orderBy('ts','desc').limit(100).get();S.al=s.docs.map(d=>d.data());$('#al').innerHTML=S.al.map(x=>`<div class="row" style="cursor:default"><div class="g"><b>${e(x.action)} ${x.god?'<span class="chip">GOD</span>':''}</b><small>${e(x.email)} · ${e(x.target)} · ${e(x.reason)}</small></div><small>${ago(x.ts)}</small></div>`).join('')||'<small>Empty</small>'}catch(x){$('#al').innerHTML='<small>Read nahi ho paya: '+e(x.message)+'</small>'}}
+function csv(){const r=[['time','email','action','target','reason','god']].concat((S.al||[]).map(x=>[dt(x.ts)?.toISOString(),x.email,x.action,x.target,x.reason,x.god]));dl('audit.csv',r.map(l=>l.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(',')).join('\n'),'text/csv')}
+function dl(n,c,t='application/json'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:t}));a.download=n;a.click()}
+const RULES=`function isAdmin(){return request.auth!=null && request.auth.token.email in ['owner@example.com'];}
+match /artifacts/{app}/users/{uid}/{document=**}{
+  allow read,write: if request.auth!=null && request.auth.uid==uid && request.auth.token.firebase.sign_in_provider!='anonymous';
+  allow read: if isAdmin();   // god writes: add 'allow write: if isAdmin();'
 }
-
-// ── Toast ─────────────────────────────────────────────────────────────────
-function toast(msg, type) {
-  const c = document.getElementById('toast-container'); if(!c) return;
-  const div = document.createElement('div');
-  const bg = type==='error' ? 'bg-red-600' : (type==='warning' ? 'bg-amber-500' : 'bg-emerald-600');
-  div.className = 'toast-item flex items-center gap-2 px-4 py-2.5 rounded-xl shadow-lg text-white text-sm font-semibold ' + bg;
-  div.textContent = msg;
-  c.appendChild(div);
-  setTimeout(()=>{ div.remove(); }, 3200);
-}
-function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function icons(){ if(window.lucide) lucide.createIcons(); }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// AUTH
-// ═══════════════════════════════════════════════════════════════════════════
-document.getElementById('login-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const email = document.getElementById('admin-email').value.trim().toLowerCase();
-  const pw = document.getElementById('admin-password').value;
-  const errEl = document.getElementById('login-error');
-  const btn = document.getElementById('login-btn');
-  errEl.classList.add('hidden');
-  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Signing in...'; icons();
-  try {
-    await signInWithEmailAndPassword(auth, email, pw);
-    // onAuthStateChanged below handles the allowlist check + UI switch
-  } catch (err) {
-    const map = {
-      'auth/invalid-credential': 'Email ya password galat hai.',
-      'auth/user-not-found': 'Is email se koi account nahi mila.',
-      'auth/too-many-requests': 'Bahut zyada attempts. Kuch der baad try karein.',
-      'auth/network-request-failed': 'Internet connection check karein.'
-    };
-    errEl.textContent = map[err.code] || (err.message || 'Login fail ho gaya.');
-    errEl.classList.remove('hidden');
-  } finally {
-    btn.innerHTML = 'Sign In <i data-lucide="arrow-right" class="w-4 h-4"></i>'; icons();
-  }
-});
-
-onAuthStateChanged(auth, async (user) => {
-  if(!user){ showLogin(); return; }
-  const email = (user.email || '').toLowerCase();
-  if(ADMIN_EMAILS.length && !ADMIN_EMAILS.includes(email)){
-    toast('Yeh account admin panel access ke liye authorized nahi hai.', 'error');
-    await signOut(auth);
-    showLogin('Aapka account admin panel ke liye allow-list mein nahi hai. admin.html ke top mein ADMIN_EMAILS array mein apna email add karein.');
-    return;
-  }
-  if(!ADMIN_EMAILS.length){
-    toast('ADMIN_EMAILS list khaali hai — koi bhi valid login is panel mein aa sakta hai. Turant admin.html mein apna email add karein!', 'warning');
-  }
-  currentUser = user;
-  document.getElementById('admin-whoami').textContent = user.email;
-  showAdminApp();
-});
-
-function showLogin(msg){
-  document.getElementById('login-screen').classList.remove('hidden');
-  document.getElementById('admin-app').classList.add('hidden');
-  icons();
-  if(msg){ const errEl = document.getElementById('login-error'); errEl.textContent = msg; errEl.classList.remove('hidden'); }
-}
-function showAdminApp(){
-  document.getElementById('login-screen').classList.add('hidden');
-  document.getElementById('admin-app').classList.remove('hidden');
-  document.getElementById('stat-appid').textContent = APP_ID;
-  Admin.loadBusinesses();
-  icons();
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// ADMIN NAMESPACE
-// ═══════════════════════════════════════════════════════════════════════════
-const Admin = {};
-window.Admin = Admin;
-
-Admin.signOutAdmin = async function(){ await signOut(auth); location.reload(); };
-
-Admin.showDashboard = function(){
-  Admin.setNav('dashboard');
-  document.getElementById('view-dashboard').classList.remove('hidden');
-  document.getElementById('view-business').classList.add('hidden');
-  document.getElementById('view-explorer').classList.add('hidden');
-};
-Admin.showCustomExplorer = function(){
-  Admin.setNav('explorer');
-  document.getElementById('view-dashboard').classList.add('hidden');
-  document.getElementById('view-business').classList.add('hidden');
-  document.getElementById('view-explorer').classList.remove('hidden');
-};
-Admin.setNav = function(key){
-  document.querySelectorAll('.navitem').forEach(el => el.classList.toggle('active', el.dataset.nav===key));
-};
-
-// ── Business directory (nested under artifacts/APP_ID — must match the path
-// the main app's _syncBizDirectory() writes to) ──────────────────────────
-Admin.loadBusinesses = async function(){
-  const listEl = document.getElementById('biz-list');
-  listEl.innerHTML = '<div class="text-slate-500 text-xs px-2 py-3">Loading...</div>';
-  try {
-    const snap = await getDocs(collection(db, 'artifacts', APP_ID, 'publicBizDirectory'));
-    bizDirectory = [];
-    snap.forEach(d => bizDirectory.push({ uid: d.id, ...d.data() }));
-    document.getElementById('stat-biz-count').textContent = bizDirectory.length;
-    Admin.renderBusinessList();
-  } catch(err) {
-    console.error(err);
-    listEl.innerHTML = '<div class="text-red-400 text-xs px-2 py-3">Load fail: ' + esc(err.message) + '<br><br>Firestore rules check karein — admin ko artifacts/' + APP_ID + '/publicBizDirectory read karne ki permission chahiye.</div>';
-  }
-};
-Admin.renderBusinessList = function(){
-  const q = (document.getElementById('biz-search').value || '').toLowerCase();
-  const listEl = document.getElementById('biz-list');
-  const filtered = bizDirectory.filter(b => !q || (b.businessName||'').toLowerCase().includes(q) || b.uid.toLowerCase().includes(q));
-  if(!filtered.length){ listEl.innerHTML = '<div class="text-slate-500 text-xs px-2 py-3">Koi business nahi mila.</div>'; return; }
-  listEl.innerHTML = filtered.map(b => `
-    <div onclick="Admin.selectBusiness('${b.uid}','${esc((b.businessName||'Unnamed').replace(/'/g,"\\'"))}')" class="px-3 py-2.5 rounded-xl cursor-pointer hover:bg-white/5 ${currentBizUid===b.uid?'bg-white/10':''}">
-      <div class="text-white text-xs font-bold truncate">${esc(b.businessName||'Unnamed Business')}</div>
-      <div class="text-slate-500 text-[10px] mono truncate">${esc(b.uid)}</div>
-    </div>`).join('');
-};
-
-// ── Select + load a business ────────────────────────────────────────────
-Admin.selectBusiness = async function(uid, name){
-  currentBizUid = uid; currentBizName = name;
-  Admin.setNav('');
-  document.getElementById('view-dashboard').classList.add('hidden');
-  document.getElementById('view-explorer').classList.add('hidden');
-  document.getElementById('view-business').classList.remove('hidden');
-  document.getElementById('biz-title').textContent = name || 'Unnamed Business';
-  document.getElementById('biz-uid-display').textContent = uid;
-  Admin.renderBusinessList();
-  Admin.switchBizTab('overview');
-};
-
-Admin.switchBizTab = function(tab){
-  document.querySelectorAll('.tabbtn').forEach(el => el.classList.toggle('active', el.dataset.tab===tab));
-  document.querySelectorAll('.biztab').forEach(el => el.classList.add('hidden'));
-  document.getElementById('biztab-'+tab).classList.remove('hidden');
-  if(tab==='overview') Admin.loadOverview();
-  else if(tab==='employees') Admin.loadEmployees();
-  else Admin.loadGenericCollection(tab);
-};
-
-// ── OVERVIEW tab: settings doc + disable toggle ────────────────────────────
-Admin.loadOverview = async function(){
-  const el = document.getElementById('biztab-overview');
-  el.innerHTML = '<div class="text-slate-400 text-sm">Loading...</div>';
-  try {
-    const ref = doc(db, 'artifacts', APP_ID, 'users', currentBizUid, 'config', 'settings');
-    const snap = await getDoc(ref);
-    const data = snap.exists() ? snap.data() : {};
-    const disabled = data.adminDisabled === true;
-    document.getElementById('biz-status-badge').innerHTML = disabled
-      ? '<span class="badge bg-red-100 text-red-700">Disabled</span>'
-      : '<span class="badge bg-emerald-100 text-emerald-700">Active</span>';
-    el.innerHTML = `
-      <div class="grid md:grid-cols-2 gap-4 mb-4">
-        <div class="card p-4">
-          <div class="font-bold text-slate-700 text-sm mb-3">Business Info</div>
-          <div class="text-sm space-y-1.5 text-slate-600">
-            <div><span class="text-slate-400">Owner:</span> ${esc(data.owner||'—')}</div>
-            <div><span class="text-slate-400">Phone:</span> ${esc(data.phone||'—')}</div>
-            <div><span class="text-slate-400">GSTIN:</span> ${esc(data.gstin||'—')}</div>
-            <div><span class="text-slate-400">Address:</span> ${esc(data.address||'—')}</div>
-          </div>
-        </div>
-        <div class="card p-4">
-          <div class="font-bold text-slate-700 text-sm mb-3">Access Control</div>
-          <p class="text-xs text-slate-500 mb-3">Disabling blocks the owner AND every employee of this business from using the app immediately (checked on next data sync — usually within seconds while the app is open, or on next login).</p>
-          ${disabled
-            ? `<button onclick="Admin.setDisabled(false)" class="btn btn-primary w-full justify-center"><i data-lucide="unlock" class="w-4 h-4"></i> Enable Business</button>`
-            : `<button onclick="Admin.setDisabled(true)" class="btn btn-danger w-full justify-center"><i data-lucide="lock" class="w-4 h-4"></i> Disable Business</button>`}
-        </div>
-      </div>
-      <div class="card p-4">
-        <div class="flex items-center justify-between mb-2">
-          <div class="font-bold text-slate-700 text-sm">Raw Settings Document</div>
-          <button onclick="Admin.openJsonEditor('${registerDoc(['artifacts',APP_ID,'users',currentBizUid,'config','settings'], data, 'Settings')}')" class="btn btn-ghost text-xs py-1.5"><i data-lucide="code" class="w-3.5 h-3.5"></i> Edit Full JSON</button>
-        </div>
-        <pre class="mono text-[11px] bg-slate-50 rounded-xl p-3 overflow-x-auto max-h-64">${esc(JSON.stringify(data, null, 2))}</pre>
-      </div>`;
-    icons();
-  } catch(err) {
-    console.error(err);
-    el.innerHTML = '<div class="text-red-500 text-sm">Load fail: ' + esc(err.message) + '</div>';
-  }
-};
-Admin.setDisabled = async function(val){
-  try {
-    const ref = doc(db, 'artifacts', APP_ID, 'users', currentBizUid, 'config', 'settings');
-    await setDoc(ref, { adminDisabled: val }, { merge: true });
-    toast(val ? 'Business disabled.' : 'Business enabled.');
-    Admin.loadOverview();
-  } catch(err) { toast('Fail: ' + err.message, 'error'); }
-};
-
-// ── EMPLOYEES tab ───────────────────────────────────────────────────────
-Admin.loadEmployees = async function(){
-  const el = document.getElementById('biztab-employees');
-  el.innerHTML = '<div class="text-slate-400 text-sm">Loading...</div>';
-  try {
-    const ref = doc(db, 'artifacts', APP_ID, 'users', currentBizUid, 'config', 'employees');
-    const snap = await getDoc(ref);
-    const list = (snap.exists() && snap.data().list) || [];
-    document.getElementById('stat-selected-emp-count').textContent = list.length;
-    if(!list.length){ el.innerHTML = '<div class="card p-6 text-center text-slate-400 text-sm">Is business ka koi employee nahi mila.</div>'; return; }
-    el.innerHTML = `<div class="card overflow-x-auto"><table>
-      <thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Status</th><th style="text-align:right">Actions</th></tr></thead>
-      <tbody>${list.map((e,i) => `
-        <tr>
-          <td class="font-semibold text-slate-700">${esc(e.name||'—')}</td>
-          <td class="mono text-xs">${esc(e.email||'—')}</td>
-          <td>${esc(e.dept||'—')}</td>
-          <td>${e.active===false ? '<span class="badge bg-red-100 text-red-700">Inactive</span>' : '<span class="badge bg-emerald-100 text-emerald-700">Active</span>'}</td>
-          <td style="text-align:right">
-            <button onclick="Admin.toggleEmployeeActive(${i})" class="btn btn-ghost text-xs py-1 px-2.5">${e.active===false?'Activate':'Deactivate'}</button>
-            <button onclick="Admin.deleteEmployee(${i})" class="btn btn-danger text-xs py-1 px-2.5">Delete</button>
-          </td>
-        </tr>`).join('')}
-      </tbody></table></div>
-      <p class="text-[11px] text-slate-400 mt-2">Passwords are stored as one-way hashes and are not viewable here — use "Reset password" inside the main app's Employees section if a staff member forgets theirs.</p>`;
-    window._adminEmpCache = list;
-  } catch(err) { console.error(err); el.innerHTML = '<div class="text-red-500 text-sm">Load fail: ' + esc(err.message) + '</div>'; }
-};
-Admin.toggleEmployeeActive = async function(idx){
-  try {
-    const list = window._adminEmpCache.slice();
-    list[idx] = Object.assign({}, list[idx], { active: list[idx].active===false ? true : false });
-    const ref = doc(db, 'artifacts', APP_ID, 'users', currentBizUid, 'config', 'employees');
-    await setDoc(ref, { list: list, updatedAt: new Date().toISOString() });
-    toast('Employee status updated.');
-    Admin.loadEmployees();
-  } catch(err) { toast('Fail: ' + err.message, 'error'); }
-};
-Admin.deleteEmployee = async function(idx){
-  if(!confirm('Is employee ko permanently remove karna hai?')) return;
-  try {
-    const list = window._adminEmpCache.filter((_,i) => i!==idx);
-    const ref = doc(db, 'artifacts', APP_ID, 'users', currentBizUid, 'config', 'employees');
-    await setDoc(ref, { list: list, updatedAt: new Date().toISOString() });
-    toast('Employee deleted.');
-    Admin.loadEmployees();
-  } catch(err) { toast('Fail: ' + err.message, 'error'); }
-};
-
-// ── GENERIC COLLECTIONS: invoices / clients / products / expenses ─────────
-const COLLECTION_PREVIEW = {
-  invoices: d => [d.invoiceId || d.id || '—', (d.client && d.client.name) || '—', d.grandTotal!=null?('₹'+d.grandTotal):'—', d.status || '—'],
-  clients: d => [d.name || '—', d.phone || '—', d.gstin || '—', d.balance!=null?('₹'+d.balance):'—'],
-  products: d => [d.name || '—', d.price!=null?('₹'+d.price):'—', d.stock!=null?d.stock:'—', d.category || '—'],
-  expenses: d => [d.date || '—', d.category || '—', d.amount!=null?('₹'+d.amount):'—', d.desc || '—'],
-};
-const COLLECTION_HEADERS = {
-  invoices: ['Invoice #','Client','Total','Status'],
-  clients: ['Name','Phone','GSTIN','Balance'],
-  products: ['Name','Price','Stock','Category'],
-  expenses: ['Date','Category','Amount','Note'],
-};
-Admin.loadGenericCollection = async function(collName){
-  const el = document.getElementById('biztab-'+collName);
-  el.innerHTML = '<div class="text-slate-400 text-sm">Loading...</div>';
-  try {
-    const colRef = collection(db, 'artifacts', APP_ID, 'users', currentBizUid, collName);
-    const snap = await getDocs(query(colRef, limit(200)));
-    const docs = []; snap.forEach(d => docs.push({ id: d.id, data: d.data() }));
-    if(!docs.length){ el.innerHTML = `<div class="card p-6 text-center text-slate-400 text-sm">Koi ${esc(collName)} record nahi mila.</div>`; return; }
-    const headers = COLLECTION_HEADERS[collName] || ['Field 1','Field 2','Field 3','Field 4'];
-    const previewFn = COLLECTION_PREVIEW[collName] || (d => Object.values(d).slice(0,4));
-    el.innerHTML = `<div class="text-[11px] text-slate-400 mb-2">Showing latest ${docs.length} record(s) (max 200).</div>
-      <div class="card overflow-x-auto"><table>
-      <thead><tr>${headers.map(h=>`<th>${esc(h)}</th>`).join('')}<th style="text-align:right">Actions</th></tr></thead>
-      <tbody>${docs.map(({id,data}) => {
-        const cols = previewFn(data);
-        return `<tr>${cols.map(c=>`<td>${esc(c)}</td>`).join('')}<td style="text-align:right">
-          <button onclick="Admin.openJsonEditor('${registerDoc(['artifacts',APP_ID,'users',currentBizUid,collName,id], data, collName+' / '+id)}')" class="btn btn-ghost text-xs py-1 px-2.5">Edit JSON</button>
-          <button onclick="Admin.deleteDocDirect('artifacts/${APP_ID}/users/${currentBizUid}/${collName}/${id}')" class="btn btn-danger text-xs py-1 px-2.5">Delete</button>
-        </td></tr>`;
-      }).join('')}</tbody></table></div>`;
-    icons();
-  } catch(err) { console.error(err); el.innerHTML = '<div class="text-red-500 text-sm">Load fail: ' + esc(err.message) + '</div>'; }
-};
-Admin.deleteDocDirect = async function(pathStr){
-  if(!confirm('Yeh document permanently delete karna hai? Yeh undo nahi ho sakta.')) return;
-  try {
-    const segs = pathStr.split('/');
-    await deleteDoc(doc(db, ...segs));
-    toast('Document deleted.');
-    // reload whichever view is open
-    if(currentBizUid) Admin.switchBizTab(document.querySelector('.tabbtn.active').dataset.tab);
-    else Admin.exploreCustomPath();
-  } catch(err) { toast('Fail: ' + err.message, 'error'); }
-};
-
-// ── CUSTOM PATH EXPLORER ────────────────────────────────────────────────
-Admin.exploreCustomPath = async function(){
-  const pathStr = document.getElementById('explorer-path').value.trim().replace(/^\/+|\/+$/g,'');
-  const resultsEl = document.getElementById('explorer-results');
-  if(!pathStr){ toast('Path daalein', 'warning'); return; }
-  const segs = pathStr.split('/').filter(Boolean);
-  if(segs.length % 2 !== 0){ resultsEl.innerHTML = '<div class="text-amber-600 text-sm">Yeh ek collection path lagta hai jiske segments odd number mein nahi hone chahiye thay for a collection (should end at a collection name, i.e. even number of segments is a document, odd going one level up is a collection). Try: artifacts/'+APP_ID+'/users/UID/invoices</div>'; }
-  resultsEl.innerHTML = '<div class="text-slate-400 text-sm">Loading...</div>';
-  try {
-    const colRef = collection(db, ...segs);
-    const snap = await getDocs(query(colRef, limit(200)));
-    const docs = []; snap.forEach(d => docs.push({ id: d.id, data: d.data() }));
-    if(!docs.length){ resultsEl.innerHTML = '<div class="card p-6 text-center text-slate-400 text-sm">Koi documents nahi mile is path pe.</div>'; return; }
-    resultsEl.innerHTML = `<div class="text-[11px] text-slate-400 mb-2">${docs.length} document(s) found.</div>
-      <div class="card overflow-x-auto"><table><thead><tr><th>Doc ID</th><th>Preview</th><th style="text-align:right">Actions</th></tr></thead>
-      <tbody>${docs.map(({id,data}) => `<tr>
-        <td class="mono text-xs">${esc(id)}</td>
-        <td class="mono text-[11px] text-slate-500">${esc(JSON.stringify(data).slice(0,80))}...</td>
-        <td style="text-align:right">
-          <button onclick="Admin.openJsonEditor('${registerDoc(segs.concat([id]), data, id)}')" class="btn btn-ghost text-xs py-1 px-2.5">Edit JSON</button>
-          <button onclick="Admin.deleteDocDirect('${segs.concat([id]).join('/')}')" class="btn btn-danger text-xs py-1 px-2.5">Delete</button>
-        </td></tr>`).join('')}</tbody></table></div>`;
-    icons();
-  } catch(err) { console.error(err); resultsEl.innerHTML = '<div class="text-red-500 text-sm">Load fail: ' + esc(err.message) + '</div>'; }
-};
-
-// ── JSON EDIT MODAL (shared by every tab) ──────────────────────────────────
-Admin.openJsonEditor = function(key){
-  const entry = docRegistry.get(key);
-  if(!entry){ toast('Document data expired — tab ko refresh karke dobara try karein.', 'error'); return; }
-  jsonModalCtx = { path: entry.pathSegs };
-  document.getElementById('json-modal-title').textContent = 'Edit — ' + entry.label;
-  document.getElementById('json-modal-path').textContent = entry.pathSegs.join('/');
-  document.getElementById('json-modal-textarea').value = JSON.stringify(entry.data, null, 2);
-  document.getElementById('json-modal-error').classList.add('hidden');
-  document.getElementById('json-modal-bg').classList.add('open');
-  icons();
-};
-Admin.closeJsonModal = function(){ document.getElementById('json-modal-bg').classList.remove('open'); jsonModalCtx = null; };
-Admin.saveFromModal = async function(){
-  if(!jsonModalCtx) return;
-  const errEl = document.getElementById('json-modal-error');
-  let parsed;
-  try { parsed = JSON.parse(document.getElementById('json-modal-textarea').value); }
-  catch(e){ errEl.textContent = 'Invalid JSON: ' + e.message; errEl.classList.remove('hidden'); return; }
-  try {
-    await setDoc(doc(db, ...jsonModalCtx.path), parsed);
-    toast('Saved successfully.');
-    Admin.closeJsonModal();
-    if(currentBizUid && document.getElementById('view-business').classList.contains('hidden')===false){
-      const activeTab = document.querySelector('.tabbtn.active'); if(activeTab) Admin.switchBizTab(activeTab.dataset.tab);
-    } else if(!document.getElementById('view-explorer').classList.contains('hidden')) {
-      Admin.exploreCustomPath();
-    }
-  } catch(err) { errEl.textContent = 'Save fail: ' + err.message; errEl.classList.remove('hidden'); }
-};
-Admin.deleteFromModal = async function(){
-  if(!jsonModalCtx) return;
-  if(!confirm('Yeh document permanently delete karna hai?')) return;
-  try {
-    await deleteDoc(doc(db, ...jsonModalCtx.path));
-    toast('Document deleted.');
-    Admin.closeJsonModal();
-    if(currentBizUid){ const activeTab = document.querySelector('.tabbtn.active'); if(activeTab) Admin.switchBizTab(activeTab.dataset.tab); }
-  } catch(err) { toast('Fail: ' + err.message, 'error'); }
-};
-
-icons();
-</script>
-</body>
-</html>
+match /artifacts/{app}/adminAudit/{id}{ allow create: if isAdmin(); allow read: if isAdmin(); allow update,delete: if false; }
+match /{path=**}/{col}/{id}{ allow read: if isAdmin() && col in ['invoices','clients','products','expenses','employees','onlineOrders']; }`;
+function set(){const g=CFG.gods.includes((auth.currentUser?.email||'').toLowerCase());return `<div class="stack"><div class="card stack"><b>Account</b><small>${e(auth.currentUser.email)} · idle timeout ${CFG.idleMin}m</small></div>
+ ${g?`<div class="card stack"><b>God Mode</b><small>Poora data inspect/edit, console, panic button. Password re-auth lagta hai. ${CFG.godMin} min baad auto-off. Har action audit hota hai.</small><button class="btn pr" onclick="godOn()">${S.god?'God Mode ON — extend':'Unlock God Mode'}</button>${S.god?'<button class="btn" onclick="godOff()">Turn off</button>':''}</div>`:''}
+ <div class="card stack"><b>Firestore rules (zaroori — asli security yahi hai)</b><small>Panel ka email check sirf UI gate hai. Rules me bhi same admin email daalo, warna koi bhi data padh sakta hai.</small><pre>${e(RULES)}</pre></div>
+ <div class="card stack"><b>Thresholds</b><small>Inactive = ${CFG.inactiveDays} din. Config object me badlo (top of file).</small></div></div>`}
+/* ---------- tenant 360 ---------- */
+async function t360(u){const t=S.T[u];const m=modal(`<div class="fl" style="justify-content:space-between"><h3 class="hd">${e(t.name)}</h3><button class="btn sm" onclick="closeM()">Close</button></div><small>${e(t.email)} ${e(t.phone)} ${e(t.gst)} · uid ${e(u)}</small>
+<div class="grid" style="margin:12px 0">${kpi('Health',t.health+'/100')}${kpi('Invoices',t.inv,'30d: '+t.month)}${kpi('Revenue',inr(t.rev))}${kpi('Products',t.prod,'stock '+inr(t.stock))}${kpi('Clients',t.cli)}${kpi('Expenses',t.exp)}${kpi('Employees',t.emp)}${kpi('Web orders',t.ord,t.pend+' pending')}</div>
+<div class="card"><b>Samasya / opportunity</b>${issues(t).map(i=>`<div class="row" style="cursor:default"><div class="g">${e(i[1])}</div><button class="btn sm" onclick="wa(S.T['${e(u)}'],fill(TPL.${i[0]}[1],S.T['${e(u)}']))">WhatsApp</button><button class="btn sm" onclick="one('${e(u)}','${i[0]}')">In-app</button></div>`).join('')||'<small>Sab theek, koi issue nahi</small>'}</div>
+<div class="card" style="margin-top:12px"><b>Recent invoices</b>${S.inv.filter(x=>x.u===u).sort((a,b)=>(b.c||0)-(a.c||0)).slice(0,8).map(x=>`<div class="row" style="cursor:default"><div class="g"><b>#${e(x.no)} ${e(x.client)}</b><small>${ago(x.c)}</small></div><b>${inr(x.a)}</b></div>`).join('')||'<small>None</small>'}</div>
+<div class="card stack" style="margin-top:12px"><b>Actions</b><textarea id="nt" placeholder="Private admin note">${e(t.notes)}</textarea><div class="fl"><button class="btn sm" onclick="note('${e(u)}')">Save note</button><button class="btn sm" onclick="custom('${e(u)}')">Custom message</button><button class="btn sm" onclick="wa(S.T['${e(u)}'],fill(TPL.tip[1],S.T['${e(u)}']))">WhatsApp tip</button><button class="btn sm" onclick="exportT('${e(u)}')">Export JSON</button>${S.god?`<button class="btn sm dg" onclick="suspend('${e(u)}')">${t.susp?'Unsuspend':'Suspend'}</button><button class="btn sm" onclick="S.path='users/${e(u)}';closeM();go('exp')">Open in Explorer</button>`:''}</div></div>`)}
+async function one(u,k){const t=S.T[u];await inapp([u],TPL[k][0],TPL[k][1].replace(/^{name} ji,?\s*/,''),'nudge');toast('Bhej diya')}
+function custom(u){const m=modal('<div class="stack"><h3 class="hd">Message</h3><input id="ct" placeholder="Title"><textarea id="cb" placeholder="Message"></textarea><button class="btn pr" id="cs">Send in-app</button></div>');m.querySelector('#cs').onclick=async()=>{const a=m.querySelector('#ct').value,b=m.querySelector('#cb').value;if(!a||!b)return toast('Fill both');await inapp([u],a,b);m.remove();toast('Sent')}}
+async function note(u){await U(u).set({adminNote:$('#nt').value},{merge:true});S.T[u].notes=$('#nt').value;await audit('note',u,null,{note:$('#nt').value});toast('Saved')}
+async function exportT(u){toast('Export ho raha hai…');const out={};for(const c of['invoices','clients','products','expenses','employees','onlineOrders','notifications','purchaseOrders','branches','appointments']){try{out[c]=(await U(u).collection(c).limit(2000).get()).docs.map(d=>({id:d.id,...d.data()}))}catch(_){}}await audit('export',u);dl('tenant_'+u+'.json',JSON.stringify(out,(k,v)=>v&&v.toDate?v.toDate().toISOString():v,1))}
+async function suspend(u){const t=S.T[u],r=await ask((t.susp?'Unsuspend ':'Suspend ')+t.name,t.name);if(!r||!await reauth())return;await U(u).set({suspended:!t.susp},{merge:true});await audit('suspend',u,{s:t.susp},{s:!t.susp},r.reason);t.susp=!t.susp;toast('Done');closeM()}
+/* ---------- god mode ---------- */
+async function godOn(){if(!CFG.gods.includes((auth.currentUser?.email||'').toLowerCase()))return;if(!await reauth())return;S.god=true;S.godUntil=Date.now()+CFG.godMin*6e4;document.body.classList.add('god');$('#godbar').style.display='block';nav();await audit('god_on');toast('God Mode ON');if(S.tab==='set')render()}
+function godOff(){S.god=false;document.body.classList.remove('god');$('#godbar').style.display='none';if(['exp','con','panic'].includes(S.tab))S.tab='dash';nav();go(S.tab);audit('god_off')}
+function exp(){return `<div class="card stack"><b>Raw Firestore editor</b><small>Path artifacts/${e(CFG.appId)}/ ke baad ka relative path (document ke liye even segments, collection ke liye odd). Eg: users/UID/products</small>
+<input id="pth" value="${e(S.path||'')}" placeholder="users/UID/products"><button class="btn pr" onclick="loadP()">Load</button><div id="pv"></div></div>`}
+async function loadP(){const p=$('#pth').value.trim().replace(/^\/|\/$/g,'');S.path=p;const seg=p.split('/').filter(Boolean);const ref=seg.length%2?R().collection(seg.join('/')):R().doc(seg.join('/'));
+ try{if(seg.length%2){const s=await ref.limit(30).get();S.docs=s.docs;$('#pv').innerHTML=s.docs.map(d=>`<div class="row" onclick="S.path='${e(p)}/${e(d.id)}';$('#pth').value=S.path;loadP()"><div class="g"><b>${e(d.id)}</b><small>${e(JSON.stringify(d.data()).slice(0,90))}</small></div></div>`).join('')||'<small>Empty</small>'}
+ else{const d=await ref.get();S.cur=d.exists?d.data():null;S.before=JSON.stringify(S.cur,(k,v)=>v&&v.toDate?v.toDate().toISOString():v,2);$('#pv').innerHTML=`<textarea id="js" style="min-height:260px;font-family:monospace;font-size:12px">${e(S.before)}</textarea><div class="fl"><button class="btn pr" onclick="saveP()">Save (diff dikhega)</button><button class="btn dg" onclick="delP()">Delete doc</button></div>`}}catch(x){$('#pv').innerHTML='<small style="color:var(--er)">'+e(x.message)+'</small>'}}
+async function saveP(){let n;try{n=JSON.parse($('#js').value)}catch(_){return toast('JSON galat hai')}const a=S.before.split('\n'),b=JSON.stringify(n,null,2).split('\n');const df=[];for(let i=0;i<Math.max(a.length,b.length);i++)if(a[i]!==b[i])df.push((a[i]!==undefined?'- '+a[i]:'')+'\n'+(b[i]!==undefined?'+ '+b[i]:''));if(!df.length)return toast('Koi change nahi');
+ const r=await ask('Diff confirm','SAVE');if(!r)return;modal('<pre>'+e(df.slice(0,60).join('\n'))+'</pre>').remove();await R().doc(S.path).set(n);await audit('raw_write',S.path,S.before,n,r.reason);toast('Saved');loadP()}
+async function delP(){const r=await ask('Document delete: '+S.path,'DELETE');if(!r||!await reauth())return;await R().doc(S.path).delete();await audit('raw_delete',S.path,S.before,null,r.reason);toast('Deleted');S.path=S.path.split('/').slice(0,-1).join('/');render()}
+function con(){return `<div class="card stack"><b>Admin console (whitelisted)</b><small>find &lt;q&gt; · user &lt;uid&gt; · stats · suspend &lt;uid&gt; · unsuspend &lt;uid&gt; · broadcast "&lt;msg&gt;" · note &lt;uid&gt; &lt;text&gt; · maint on|off</small><pre id="co" style="min-height:160px"></pre><input id="ci" placeholder="command…" onkeydown="if(event.key==='Enter')run(this)"></div>`}
+async function run(i){const c=i.value.trim();i.value='';const o=$('#co'),p=s=>o.textContent+='\n'+s;p('> '+c);const [cmd,...r]=c.split(' '),x=r.join(' ');
+ try{if(cmd==='find'){A().filter(t=>[t.name,t.email,t.phone,t.gst,t.uid].join(' ').toLowerCase().includes(x.toLowerCase())).slice(0,10).forEach(t=>p(t.uid+'  '+t.name+'  '+t.phone))}
+ else if(cmd==='user'){const t=S.T[x];p(t?JSON.stringify(t,null,1):'not found')}
+ else if(cmd==='stats'){p('users '+A().length+' · invoices '+S.inv.length+' · orders '+S.ord.length)}
+ else if(cmd==='suspend'||cmd==='unsuspend'){if(!S.T[x])return p('not found');await U(x).set({suspended:cmd==='suspend'},{merge:true});await audit('console_'+cmd,x);p('ok')}
+ else if(cmd==='note'){const [u,...n]=r;await U(u).set({adminNote:n.join(' ')},{merge:true});await audit('console_note',u);p('ok')}
+ else if(cmd==='broadcast'){const m=x.replace(/^"|"$/g,'');if(!m)return p('message missing');if(!await ask('Broadcast sabko ('+A().length+')','SEND'))return p('cancelled');await inapp(A().map(t=>t.uid),'Announcement',m,'broadcast');p('sent')}
+ else if(cmd==='maint'){await R().collection('config').doc('admin').set({maintenance:x==='on'},{merge:true});await audit('maint',x);p('maintenance '+x)}
+ else p('unknown command')}catch(z){p('error: '+z.message)}}
+function panic(){return `<div class="card stack" style="border-color:var(--er)"><b>Panic button</b><small>config/admin doc me freeze + maintenance flag set karta hai (ERP app ko ye flag padhna hoga: <code>frozen</code>, <code>maintenance</code>, <code>minVersion</code>, <code>swVersion</code>).</small>
+<button class="btn dg" onclick="pan(true)">FREEZE &amp; maintenance ON</button><button class="btn" onclick="pan(false)">Unfreeze</button><button class="btn" onclick="bump()">Service-worker version bump (force update)</button></div>`}
+async function pan(on){const r=await ask(on?'Sab freeze karna hai?':'Unfreeze','CONFIRM');if(!r||!await reauth())return;await R().collection('config').doc('admin').set({frozen:on,maintenance:on,msg:on?'Maintenance chal raha hai, thodi der baad aaiye.':''},{merge:true});await audit('panic',on?'on':'off',null,{on},r.reason);toast('Done')}
+async function bump(){const r=await ask('Sabke PWA update force karna hai','UPDATE');if(!r)return;await R().collection('config').doc('admin').set({swVersion:Date.now()},{merge:true});await audit('sw_bump',null,null,null,r.reason);toast('Version bumped')}
+</script></body></html>
