@@ -71,7 +71,7 @@ const CFG={
  idleMin:15, godMin:30, inactiveDays:7, env:"PROD", pushUrl:"" // e.g. https://your-vercel.app/api/send-push
 };
 /* ================================================================================== */
-firebase.initializeApp(CFG.firebase);const auth=firebase.auth(),db=firebase.firestore();db.settings({experimentalForceLongPolling:true,merge:true});
+firebase.initializeApp(CFG.firebase);const auth=firebase.auth(),db=firebase.firestore();try{db.settings({experimentalAutoDetectLongPolling:true,merge:true})}catch(_){}
 const $=s=>document.querySelector(s),e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const R=()=>db.collection('artifacts').doc(CFG.appId),U=u=>R().collection('users').doc(u);
 const S={admins:[],gods:[],tab:'dash',T:{},inv:[],ord:[],loaded:false,god:false,godUntil:0,idle:0,seg:'all',q:'',sort:'rev',tap:0};
@@ -94,8 +94,8 @@ m.querySelector('#cn').onclick=()=>{m.remove();res(null)};m.querySelector('#cy')
 async function reauth(){const p=prompt('Password dobara daalo (re-auth)');if(!p)return false;try{await auth.currentUser.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(auth.currentUser.email,p));return true}catch(_){toast('Re-auth fail');return false}}
 /* ---------- auth ---------- */
 async function doLogin(ev){ev.preventDefault();const a=+localStorage.lk||0;if(Date.now()<a)return $('#lerr').textContent='Zyada attempts. Thodi der baad try karo.',false;
-try{await auth.signInWithEmailAndPassword($('#em').value.trim(),$('#pw').value);localStorage.fails=0}catch(x){const f=(+localStorage.fails||0)+1;localStorage.fails=f;if(f>=5){localStorage.lk=Date.now()+3e5;localStorage.fails=0}$('#lerr').textContent='Login fail'}return false}
-async function loadAdmins(){let x={};try{x=(await db.doc(CFG.adminDoc).get()).data()||{}}catch(_){S.fb=1;x={admins:CFG.fallbackAdmins}}const f=k=>[].concat(x[k]||[]).join(',').split(/[,;\s]+/).map(v=>v.trim().toLowerCase()).filter(Boolean);S.admins=f('admins');S.gods=f('gods').length?f('gods'):S.admins}
+$('#lerr').textContent='Signing in…';try{await auth.signInWithEmailAndPassword($('#em').value.trim(),$('#pw').value);localStorage.fails=0}catch(x){const f=(+localStorage.fails||0)+1;localStorage.fails=f;if(f>=5){localStorage.lk=Date.now()+3e5;localStorage.fails=0}$('#lerr').textContent='Login fail: '+(x.code||x.message)}return false}
+async function loadAdmins(){let x={};try{x=(await W(db.doc(CFG.adminDoc).get(),8000)).data()||{}}catch(_){S.fb=1;x={admins:CFG.fallbackAdmins}}const f=k=>[].concat(x[k]||[]).join(',').split(/[,;\s]+/).map(v=>v.trim().toLowerCase()).filter(Boolean);S.admins=f('admins');S.gods=f('gods').length?f('gods'):S.admins}
 auth.onAuthStateChanged(async u=>{let ok=false;if(u&&!u.isAnonymous){try{await loadAdmins();ok=S.admins.includes((u.email||'').toLowerCase())}catch(x){$('#lerr').textContent='Admin config padh nahi paya: '+x.message;auth.signOut();return}}
  if(u&&!ok){auth.signOut();$('#lerr').textContent='Ye account admin nahi hai.';return}
  $('#login').style.display=ok?'none':'flex';$('#app').style.display=ok?'grid':'none';if(ok){$('#env').textContent=CFG.env;nav();go('dash');refresh()}});
@@ -113,7 +113,7 @@ function more(){const m=modal('<div class="stack">'+tabs().slice(4).map(([k,n])=
 $('#logo').onclick=()=>{if((S.gods||[]).includes((auth.currentUser?.email||'').toLowerCase())){S.tap++;clearTimeout(S.tt);S.tt=setTimeout(()=>S.tap=0,2500);if(S.tap>=7){S.tap=0;godOn()}}};
 function go(t){S.tab=t;nav();$('#ttl').textContent=(tabs().find(x=>x[0]===t)||[0,''])[1];render()}
 /* ---------- data load ---------- */
-const W=p=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error('timeout 20s')),2e4))]);
+const W=(p,ms=2e4)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error('timeout '+ms/1e3+'s')),ms))]);
 async function cg(name,lim=600){try{const s=await W(db.collectionGroup(name).limit(lim).get());return s.docs.filter(d=>uidOf(d))}catch(x){console.warn(name,x.message);S.err=(S.err||'')+name+': '+x.message+' | ';return[]}}
 function T(u){return S.T[u]||(S.T[u]={uid:u,name:u.slice(0,8),email:'',phone:'',gst:'',inv:0,rev:0,last:null,first:null,cli:0,prod:0,stock:0,exp:0,emp:0,ord:0,pend:0,week:0,month:0,mrev:0})}
 async function refresh(f){try{await refresh0(f)}catch(x){console.error(x);$('#main').innerHTML='<div class="card"><b>Panel error:</b> '+e(x.message)+'<pre>'+e(x.stack||'')+'</pre></div>'}}
